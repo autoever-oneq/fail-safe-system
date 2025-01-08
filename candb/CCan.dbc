@@ -1,0 +1,197 @@
+VERSION ""
+
+
+NS_ : 
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: EPB SbW_S1 BbW_S1 ABS C_Cluster SbW_S0 BbW_A1 SbW_A1 SbW_A0 BbW_S0 BbW_A0 VCU
+
+
+BO_ 3221225472 VECTOR__INDEPENDENT_SIG_MSG: 0 Vector__XXX
+ SG_ VehicleStabilityState : 0|2@1+ (1,0) [0|3] "flag" Vector__XXX
+
+BO_ 352 EpbFeedback: 1 EPB
+ SG_ EpbFeedbackParkingBrake : 0|1@1+ (1,0) [0|1] "flag"  VCU
+
+BO_ 339 EpbStatus: 1 VCU
+ SG_ ParkingBrakeState : 0|1@1+ (1,0) [0|1] "flag"  EPB
+
+BO_ 340 GearStatus: 1 VCU
+ SG_ GearStatus : 0|2@1+ (1,0) [0|3] "flag"  EPB
+
+BO_ 338 PowertrainStatus: 3 VCU
+ SG_ VehicleSpeed : 16|8@1- (1,108) [-20|235] "kph"  BbW_S1,BbW_S0,BbW_A1,BbW_A0,ABS
+ SG_ BatterySOH : 8|7@1+ (1,0) [0|100] "percentage"  BbW_S1,BbW_S0,BbW_A1,BbW_A0,ABS
+ SG_ BatterySOC : 0|7@1+ (1,0) [0|100] "percentage"  BbW_S1,BbW_S0,BbW_A1,BbW_A0,ABS
+
+BO_ 353 AbsFeedback: 2 ABS
+ SG_ BrakeTemperature : 8|8@1- (4,452) [-60|960] "celcius"  BbW_A1,BbW_A0,VCU
+ SG_ AbsPulse : 0|8@1+ (1,0) [0|255] ""  BbW_A1,BbW_A0,VCU
+
+BO_ 291 SteerDriverState1: 3 SbW_S1
+ SG_ SteerDriverTorque : 16|6@1- (0.3,0) [-8|8] "Nm"  VCU
+ SG_ SteerDriverAngle : 0|12@1- (0.5,0) [-1000|1000] ""  VCU
+
+BO_ 290 SteerDriverState0: 3 SbW_S0
+ SG_ SteerDriverTorque : 16|6@1- (0.3,0) [-8|8] "Nm"  VCU
+ SG_ SteerDriverAngle : 0|12@1- (0.5,0) [-1000|1000] ""  VCU
+
+BO_ 277 BrakeSensor1FailStatus: 1 BbW_S1
+ SG_ BbWS_FailInfo : 6|2@1+ (1,0) [0|0] "flag"  VCU
+ SG_ BbWS_FailCount : 0|6@1+ (1,0) [0|50] ""  VCU
+
+BO_ 276 BrakeSensor0FailStatus: 1 BbW_S0
+ SG_ BbWS_FailInfo : 6|2@1+ (1,0) [0|0] "flag"  VCU
+ SG_ BbWS_FailCount : 0|6@1+ (1,0) [0|50] ""  VCU
+
+BO_ 307 BrakeActuator1FailStatus: 1 BbW_A1
+ SG_ BbWA_FailInfo : 6|2@1+ (1,0) [0|0] "flag"  VCU
+ SG_ BbWA_FailCount : 0|6@1+ (1,0) [0|50] ""  VCU
+
+BO_ 306 BrakeActuator0FailStatus: 1 BbW_A0
+ SG_ BbWA_FailInfo : 6|2@1+ (1,0) [0|0] "flag"  VCU
+ SG_ BbWA_FailCount : 0|6@1+ (1,0) [0|50] ""  VCU
+
+BO_ 293 SteerSensor1FailStatus: 1 SbW_S1
+ SG_ SbWS_FailInfo : 6|2@1+ (1,0) [0|0] "flag"  VCU
+ SG_ SbWS_FailCount : 0|6@1+ (1,0) [0|50] ""  VCU
+
+BO_ 292 SteerSensor0FailStatus: 1 SbW_S0
+ SG_ SbWS_FailInfo : 6|2@1+ (1,0) [0|0] "flag"  VCU
+ SG_ SbWS_FailCount : 0|6@1+ (1,0) [0|50] ""  VCU
+
+BO_ 323 SteerActuator1FailStatus: 1 SbW_A1
+ SG_ SbWA_FailInfo : 6|2@1+ (1,0) [0|0] "flag"  VCU
+ SG_ SbWA_FailCount : 0|6@1+ (1,0) [0|50] ""  VCU
+
+BO_ 322 SteerActuator0FailStatus: 1 SbW_A0
+ SG_ SbWA_FailInfo : 6|2@1+ (1,0) [0|0] "flag"  VCU
+ SG_ SbWA_FailCount : 0|6@1+ (1,0) [0|50] ""  VCU
+
+BO_ 337 RegenerativeBrakeStatus: 2 VCU
+ SG_ RegenerativeBrakingLevel : 8|2@1+ (1,0) [0|3] "flag"  BbW_S1,BbW_S0
+ SG_ RegenerativeBrakingDistribution : 0|7@1+ (1,0) [0|100] "percentage"  BbW_S1,BbW_S0
+
+BO_ 336 MechanicalBrakeStatus: 2 VCU
+ SG_ MechanicalDistributionLevel : 8|2@1+ (1,0) [0|3] "flag"  BbW_S1,BbW_S0
+ SG_ MechanicalBrakeDistribution : 0|7@1+ (1,0) [0|100] "percentage"  BbW_S1,BbW_S0
+
+BO_ 273 BrakeCommand1: 2 BbW_S1
+ SG_ BrakePedalActive : 8|1@1+ (1,0) [0|1] "flag" Vector__XXX
+ SG_ ActiveBrakeLevel : 1|7@1+ (1,0) [0|100] ""  BbW_A1,BbW_A0
+ SG_ BrakeConnectionState : 0|1@1+ (1,0) [0|1] "flag"  BbW_A1,BbW_A0
+
+BO_ 309 WheelStatus1: 2 BbW_A1
+ SG_ WheelSpeed : 0|10@1+ (1,0) [0|1023] "rpm"  VCU,SbW_S1,SbW_S0,SbW_A1,SbW_A0,C_Cluster,BbW_S1,BbW_S0,BbW_A0
+
+BO_ 259 CommandResetBrake: 1 VCU
+ SG_ HardResetBbWS1 : 3|1@1+ (1,0) [0|1] "flag"  BbW_S1
+ SG_ HardResetBbWS0 : 2|1@1+ (1,0) [0|1] "flag"  BbW_S0
+ SG_ HardResetBbWA1 : 1|1@1+ (1,0) [0|1] "flag"  BbW_A1
+ SG_ HardResetBbWA0 : 0|1@1+ (1,0) [0|1] "flag"  BbW_A0
+
+BO_ 260 CommandResetSteer: 1 VCU
+ SG_ HardResetSbWS1 : 3|1@1+ (1,0) [0|1] "flag"  SbW_S1
+ SG_ HardResetSbWS0 : 2|1@1+ (1,0) [0|1] "flag"  SbW_S0
+ SG_ HardResetSbWA1 : 1|1@1+ (1,0) [0|1] "flag"  SbW_A1
+ SG_ HardResetSbWA0 : 0|1@1+ (1,0) [0|1] "flag"  SbW_A0
+
+BO_ 289 SteerCommand1: 3 SbW_S1
+ SG_ SteerConnectionState : 11|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ SteerWheelTorque : 16|8@1- (0.2,0) [-25.6|25.4] "Nm"  VCU,SbW_A1,SbW_A0
+ SG_ SteerAngle : 0|11@1- (1,0) [-900|900] "degree"  VCU,SbW_A1,SbW_A0
+
+BO_ 321 SteerFeedback1: 2 SbW_A1
+ SG_ SteerFeedbackAngle : 0|10@1- (1,0) [-512|511] "degree"  SbW_S1,SbW_S0
+
+BO_ 275 BrakePedalState1: 1 BbW_S1
+ SG_ BrakePedalPosition : 1|7@1+ (1,0) [0|100] "percentage"  BbW_A1,BbW_A0,ABS,VCU
+ SG_ BrakePedalActive : 0|1@1+ (1,0) [0|1] "flag"  BbW_A1,BbW_A0,ABS,VCU
+
+BO_ 305 BrakeFeedback1: 4 BbW_A1
+ SG_ WheelSpeed : 16|10@1+ (1,0) [0|1023] "rpm"  BbW_S1,BbW_S0,VCU,BbW_A0
+ SG_ BrakeErrorSig : 1|1@1+ (1,0) [0|1] "flag"  BbW_S1,BbW_S0,VCU,BbW_A0
+ SG_ BrakeFeedbackPressure : 8|8@1+ (2,0) [0|510] "bar"  BbW_S1,BbW_S0,VCU,BbW_A0
+ SG_ BrakeFeedbackABSActive : 0|1@1+ (1,0) [0|1] ""  BbW_S1,BbW_S0,VCU,BbW_A0
+
+BO_ 258 SetSteer: 1 VCU
+ SG_ SetPrimarySensorSteer : 1|1@1+ (1,0) [0|1] "flag"  SbW_A1,SbW_S1,SbW_S0
+ SG_ SetPrimaryActuatorSteer : 0|1@1+ (1,0) [0|1] "flag"  SbW_S1,SbW_S0,SbW_A1,SbW_A0
+
+BO_ 354 SetABS: 1 ABS
+ SG_ ABSActive : 0|1@1+ (1,0) [0|1] "flag"  VCU
+
+BO_ 261 CANHealthyCheck: 1 VCU
+ SG_ CAN2Healthy : 1|1@1+ (1,0) [0|1] "flag"  ABS,BbW_S0,BbW_S1,C_Cluster,SbW_S1,SbW_S0,SbW_A1,SbW_A0,BbW_A1,BbW_A0
+ SG_ CAN1Healthy : 0|1@1+ (1,0) [0|1] "flag"  ABS,SbW_S1,BbW_S1,BbW_A0,BbW_S0,BbW_A1,C_Cluster,SbW_A0,SbW_A1,SbW_S0
+
+BO_ 257 SetBrake: 1 VCU
+ SG_ SetPrimarySensorBrake : 0|1@1+ (1,0) [0|1] "flag"  SbW_A0,BbW_A0,BbW_A1
+ SG_ SetPrimaryActuatorBrake : 1|1@1+ (1,0) [0|1] "flag"  BbW_A1,BbW_A0
+
+BO_ 320 SteerFeedback0: 2 SbW_A0
+ SG_ SteerFeedbackAngle : 0|10@1- (1,0) [-512|511] "degree"  SbW_S1,SbW_S0,VCU
+
+BO_ 304 BrakeFeedback0: 4 BbW_A0
+ SG_ WheelSpeed : 16|10@1+ (1,0) [0|1023] "rpm"  BbW_S1,BbW_S0,VCU,BbW_A1
+ SG_ BrakeFeedbackABSActive : 9|1@1+ (1,0) [0|1] ""  BbW_S1,BbW_S0,VCU,BbW_A1
+ SG_ BrakeErrorSig : 0|1@1+ (1,0) [0|1] "flag"  BbW_S1,BbW_S0,BbW_A1,VCU
+ SG_ BrakeFeedbackPressure : 1|8@1+ (2,0) [0|510] "bar"  BbW_S1,BbW_S0,BbW_A1,VCU
+
+BO_ 288 SteerCommand0: 3 SbW_S0
+ SG_ SteerConnectionState : 11|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ SteerWheelTorque : 16|8@1- (0.2,0) [-25.6|25.4] "Nm"  VCU,SbW_A1,SbW_A0
+ SG_ SteerAngle : 0|11@1- (1,0) [-900|900] "degree"  SbW_A0,SbW_A1,VCU
+
+BO_ 272 BrakeCommand0: 2 BbW_S0
+ SG_ BrakePedalActive : 8|1@1+ (1,0) [0|1] "flag" Vector__XXX
+ SG_ ActiveBrakeLevel : 1|7@1+ (1,0) [0|100] ""  BbW_A1,BbW_A0
+ SG_ BrakeConnectionState : 0|1@1+ (1,0) [0|1] "flag"  BbW_A1,BbW_A0
+
+BO_ 274 BrakePedalState0: 1 BbW_S0
+ SG_ BrakePedalPosition : 1|7@1+ (1,0) [0|100] "percentage"  ABS,BbW_A0,BbW_A1,VCU
+ SG_ BrakePedalActive : 0|1@1+ (1,0) [0|1] "flag"  BbW_A1,BbW_A0,ABS,VCU
+
+BO_ 256 DriveModeStatus: 1 VCU
+ SG_ ModeState : 0|2@1+ (1,0) [0|3] ""  C_Cluster,BbW_A0,BbW_A1
+
+BO_ 308 WheelStatus0: 2 BbW_A0
+ SG_ WheelSpeed : 0|10@1+ (1,0) [0|1023] "rpm"  VCU,ABS,BbW_A1,BbW_S0,BbW_S1,C_Cluster,SbW_A0,SbW_A1,SbW_S0,SbW_S1
+
+
+
+CM_ BO_ 3221225472 "This is a message for not used signals, created by Vector CANdb++ DBC OLE DB Provider.";
+BA_DEF_  "MultiplexExtEnabled" ENUM  "No","Yes";
+BA_DEF_  "BusType" STRING ;
+BA_DEF_DEF_  "MultiplexExtEnabled" "No";
+BA_DEF_DEF_  "BusType" "CAN";
+
