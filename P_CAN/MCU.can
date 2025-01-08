@@ -61,26 +61,7 @@ on message PCAN::AccelPedalState // 엑셀페달 밟은 정도에 따른 RPM 증
     accel_pedal_position = $PCAN::AccelPedalState::Accel_Pedal_Position;
     accel_pedal_position_flag = $PCAN::AccelPedalState::Accel_Pedal_Position_Flag;
     
-    if(accel_pedal_position > 75)
-    {
-      accel_pedal_position += 440;
-    }
-    else if(accel_pedal_position > 50)
-    {
-      accel_pedal_position += 330;
-    }
-    else if(accel_pedal_position > 25)
-    {
-      accel_pedal_position += 220;
-    }
-    else if(accel_pedal_position > 0)
-    {
-      accel_pedal_position += 110;
-    }
-    else
-    {
-      accel_pedal_position += 0;
-    }
+    motor_rpm += accel_pedal_position;
   }
 }
 
