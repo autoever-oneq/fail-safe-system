@@ -1,0 +1,103 @@
+﻿/*@!Encoding:65001*/
+includes
+{
+  
+}
+
+variables
+{
+  msTimer counter_10ms;
+  int cnt;
+  
+  const int battery_capacity = 100;
+  
+  int battery_volt;
+  int battery_soh;
+  int battery_soc;
+  int battery_temp;
+  
+  char bmu_alive_flag;
+  
+  char battery_hvac;
+  char mode_status;
+  char output_limit;
+}
+
+/* Initialize */
+on preStart
+{
+  setTimerCyclic(counter_10ms, 10);
+}
+
+on start
+{
+
+}
+
+
+/* BMU(Tx) -> VCU(Rx) */
+on timer counter_10ms
+{
+  ++cnt;
+  if(cnt % 3 == 0)
+  {
+    message BatteryMonitoring1 msg;
+    msg.Battery_SOC = battery_soc;
+    output(msg);
+  }
+  if(cnt % 5 == 0)
+  {
+    message BatteryMonitoring0 msg;
+    msg.Battery_Volt = battery_volt;
+    msg.Battery_SOH = battery_soh;
+    msg.Battery_Temp = battery_temp;
+    msg.Output_Limit = output_limit;
+    output(msg);
+  }
+  if(cnt % 20 == 0)
+  {
+    message RemainingRangeCal msg;
+    int remain_range;
+    
+    remain_range = battery_capacity * battery_soc * 5 / 100;
+    msg.Remain_Range = remain_range;
+    
+    output(msg);
+  }
+}
+
+
+/* VCU(Tx) -> BMU(Rx) */
+// 0x271
+on message BatterySocUpdate
+{
+  battery_soc += $BatterySocUpdate::Battery_Soc_Change;
+}
+
+// 0x251
+on message PcanHealthyCheck
+{
+  message BMUAlive alive;
+  alive.BMU_Alive_Flag = 1;
+  output(alive);
+}
+
+// 0x201
+on message PcanModeStatus
+{
+  mode_status = $PcanModeStatus::Mode_Status;
+  
+  // 시스템 쿨러 작동?
+  /* if(Mode_Status) */
+}
+
+/* End */
+on preStop
+{
+  
+}
+
+on stopMeasurement
+{
+  
+}

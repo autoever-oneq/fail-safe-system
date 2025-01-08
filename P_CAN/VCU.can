@@ -1,0 +1,99 @@
+﻿/*@!Encoding:65001*/
+includes
+{
+  
+}
+
+variables
+{
+  /* Timer */
+  msTimer alive_timer;
+  
+  /* Rx signal */
+  int battery_volt; // 0 ~ 1000
+  int battery_soh;  // 0 ~ 100
+  int battery_soc;  // 0 ~ 100
+  int battery_temp;
+  
+  char output_limit; // 배터리 온도에 따른 모터출력제한 [True/False]
+  
+  int remain_range; // 현재 SOC 기준 남은 예상 주행 거리
+  char break_status;  // 0 : 회생제동 only, 1 : 회생제동 + brake, 2 : brake only
+  
+  int regen_brake_force;  // 회생제동력
+  int mech_brake_force; // 일반 브레이크 제동력
+  
+  int alive_flag;
+  
+  int motor_rpm;
+}
+
+/* Initialize */
+on preStart
+{
+  setTimer(alive_timer, 300);
+}
+
+on start
+{
+
+}
+
+
+/* PCAN */
+// BMU
+on message PCAN::BatteryMonitoring0
+{
+  battery_volt = $PCAN::BatteryMonitoring0::Battery_Volt;
+  battery_soh = $PCAN::BatteryMonitoring0::Battery_SOH;
+  output_limit = $PCAN::BatteryMonitoring0::Output_Limit;
+  battery_temp = $PCAN::BatteryMonitoring0::Battery_Temp;
+}
+on message PCAN::BatteryMonitoring1
+{
+  battery_soc = $PCAN::BatteryMonitoring1::Battery_SOC;
+}
+on message PCAN::BMUAlive
+{
+  /*
+  alive_flag |= 1 << (??);
+  if(alive_flag == 32b000...11111111)
+  {
+    cancelTimer(alive_timer);
+    setTimer(alive_timer, 300);
+  }
+  */
+}
+
+on timer alive_timer
+{
+  // 고장 상태 flag 메시지 모든 CAN channel에 보내기
+}
+
+/*
+on message PCAN::RemainingRangeCal
+{
+  
+}
+*/
+
+
+// AHB
+on message PCAN::BrakeResp
+{
+  
+}
+on message PCAN::AHBAlive
+{
+  
+}
+
+// MCU
+on message PCAN::MotorRpmMonitoring
+{
+  
+}
+on message PCAN::MCUAlive
+{
+  
+}
