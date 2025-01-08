@@ -1,0 +1,121 @@
+﻿/*@!Encoding:65001*/
+includes
+{
+  
+}
+
+variables
+{
+  msTimer brakeresp_timer;
+  
+  int brake_status = 0;
+  int regen_brake_force = 0;
+  int mech_brake_force = 0;
+  int ahb_alive_flag = 0;
+  int motor_rpm = 0;
+  char accel_pedal_input_flag = 0;
+  int regen_brake_level = 0;
+  int brake_pedal_active = 0;
+  int brake_pedal_position = 0;
+  int mode_status = 0;
+  char pcan_healty_check = 0;
+  
+  float regen_brake_level_arr[4] = {0, 0.6, 0.7, 0.8};
+}
+
+on start
+{
+  cancelTimer(brakeresp_timer);
+  setTimerCyclic(brakeresp_timer, 50);
+}
+
+on timer brakeresp_timer // VCU에 브레이크 보내기
+{ 
+  if(mode_status != 2) // 긴급모드가 아니라면
+  {
+    message BrakeResp msg;
+    msg.Brake_Status = brake_status;
+    msg.Mech_Brake_Force = mech_brake_force; // 0 ~ 8000
+    msg.Regen_Brake_Force = regen_brake_force; // 0 ~ 2000
+    output(msg);
+  }
+}
+
+on message PCAN::RegenBrakeReq // 엑셀 밟다 땐 경우(주기 메세지)
+{
+  if(mode_status != 2) // 긴급모드가 아니라면
+  {
+    motor_rpm = $PCAN::RegenBrakeReq::Motor_RPM;
+    accel_pedal_input_flag = $PCAN::RegenBrakeReq::Accel_Pedal_Position_Flag;
+    regen_brake_level = $PCAN::RegenBrakeReq::Regen_Brake_Level;
+    
+    if(accel_pedal_input_flag == 1) // 엑셀을 계속 밟음 => 브레이크 제동력 0으로 만들기(cont'd)
+    {
+      brake_status = 0;
+      regen_brake_force = 0;
+      mech_brake_force = 0;
+    }
+    else // 엑셀 안 밟음 => 회생제동 시작
+    {
+      if(motor_rpm > 8000) regen_brake_force = 2000; // 최대 회생제동력, 모터rpm 기준 조절할 상수 값 넣기
+      else regen_brake_force = motor_rpm / 4;
+  
+      regen_brake_force = (int)(regen_brake_force * regen_brake_level_arr[regen_brake_level]);
+      brake_status = 0; // 회생만
+      mech_brake_force = 0; // 기계식 0
+    }
+  }
+}
+
+on message PCAN::BasicBrakeReq // 주행 중 브레이크 밟음(주기 메세지)
+{
+  if(mode_status != 2) // 긴급모드가 아니라면
+  {
+    int tot_force = 0;
+    brake_pedal_active = $PCAN::BasicBrakeReq::Brake_Pedal_Active;
+    brake_pedal_position = $PCAN::BasicBrakeReq::Brake_Pedal_Position;
+    motor_rpm = $PCAN::BasicBrakeReq::Motor_RPM;
+    regen_brake_level = $PCAN::BasicBrakeReq::Regen_Brake_Level;
+    
+    if(brake_pedal_active == 1) // 브레이크 밟음
+    {
+      tot_force = motor_rpm * brake_pedal_position;
+      if(brake_pedal_position >= 75 | regen_brake_level == 0)
+      {
+        mech_brake_force = tot_force / 100;
+        brake_status = 2; // 기계만
+        regen_brake_force = 0; // 회생제동력 0
+      }
+      else if(tot_force <= 200000)
+      {
+        regen_brake_force = (int)(tot_force / 100 * regen_brake_level_arr[regen_brake_level]);
+        brake_status = 0; // 회생만
+      }
+      else
+      {
+        regen_brake_force = (int)(tot_force / 100 * regen_brake_level_arr[regen_brake_level]);
+        mech_brake_force = (int)(tot_force / 100 - regen_brake_force);
+        brake_status = 1; // 회생 + 기계
+      }
+    }
+    else // 브레이크 안 밟음 => 브레이크 제동력 0으로 만들기(cont'd)
+    {
+      brake_status = 0;
+      regen_brake_force = 0;
+      mech_brake_force = 0;
+    }
+  }
+}
+
+on message PCAN::PcanModeStatus
+{
+  if($PCAN::PcanModeStatus::Mode_Status == 2){ // 긴급인 경우 ==> cont'd
+  }
+}
+
+on message PCAN::PcanHealthyCheck // ECU 체크
+{
+  message AHBAlive msg;
+  msg.AHB_Alive_Flag = 1;
+  output(msg);
+}
