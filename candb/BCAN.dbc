@@ -1,0 +1,120 @@
+VERSION ""
+
+
+NS_ : 
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: HVAC TPMS CLU BCM VCU
+
+
+BO_ 768 DriveMode: 1 VCU
+ SG_ DriveMode : 0|2@1+ (1,0) [0|2] ""  BCM
+
+BO_ 769 GearInput: 1 BCM
+ SG_ GearInput : 0|2@1+ (1,0) [0|3] ""  CLU,VCU
+
+BO_ 787 ADSOperation: 1 CLU
+ SG_ ADCOperation : 0|2@1+ (1,0) [0|2] ""  HVAC
+
+BO_ 786 HVACControl: 2 CLU
+ SG_ HVACTemp : 10|5@1+ (1,18) [18|32] ""  HVAC
+ SG_ HVACStrength : 8|2@1+ (1,0) [0|2] ""  HVAC
+ SG_ HVACOperation : 5|2@1+ (1,0) [0|1] "Flag"  HVAC
+ SG_ HVACMode : 2|3@1+ (1,0) [0|7] ""  HVAC
+ SG_ HVACHeatCool : 0|2@1+ (1,0) [0|2] "Flag"  HVAC
+
+BO_ 820 RRTurnVoltCurrent: 1 BCM
+ SG_ RRVolt : 5|3@1+ (1,0) [0|5] "V"  VCU
+ SG_ RRCurrent : 0|5@1+ (1,0) [0|30] "mA"  VCU
+
+BO_ 819 RLTurnVoltCurrent: 1 BCM
+ SG_ RLVolt : 5|3@1+ (1,0) [0|5] "V"  VCU
+ SG_ RLCurrent : 0|5@1+ (1,0) [0|30] "mA"  VCU
+
+BO_ 818 FRTurnVoltCurrent: 1 BCM
+ SG_ FRVolt : 5|3@1+ (1,0) [0|5] "V"  VCU
+ SG_ FRCurrent : 0|5@1+ (1,0) [0|30] "mA"  VCU
+
+BO_ 817 FLTurnVoltCurrent: 1 BCM
+ SG_ FLVolt : 5|3@1+ (1,0) [0|5] "V"  VCU
+ SG_ FLCurrent : 0|5@1+ (1,0) [0|30] "mA"  VCU
+
+BO_ 775 FrmPCAN_CLU_1000ms: 3 VCU
+ SG_ BatteryTemp : 16|8@1- (1,90) [-50|150] ""  CLU
+ SG_ BatterySOC : 8|7@1+ (1,0) [0|100] "percent"  CLU
+ SG_ Battery_Output_Limit : 1|1@1+ (1,0) [0|1] "Flag"  CLU
+ SG_ Regen_Brake_Status : 0|1@1+ (1,0) [0|1] "Flag"  CLU
+
+BO_ 771 FrmVCU_CLU_100ms: 1 VCU
+ SG_ CurVelocity : 0|8@1+ (1,0) [0|250] "km/h"  CLU
+
+BO_ 770 TirePressureAlert: 1 VCU
+ SG_ TireAlertFlag : 0|1@1+ (1,0) [0|1] "Flag"  CLU
+
+BO_ 785 RegBrake_level: 1 CLU
+ SG_ RegBrake_Level : 0|2@1+ (1,0) [0|3] "stage"  VCU,CLU
+
+BO_ 774 RightTurnSignalLampControl: 2 VCU
+ SG_ RightTurnSignalPeriod : 0|10@1+ (1,0) [0|1000] "ms"  BCM
+ SG_ RightTurnSignalControl : 15|1@1+ (1,0) [0|1] "Flag"  BCM
+
+BO_ 773 LeftTurnSignalLampControl: 2 VCU
+ SG_ LeftTurnSignalPeriod : 0|10@1+ (1,0) [0|1000] "ms"  BCM
+ SG_ LeftTurnSignalControl : 15|1@1+ (1,0) [0|1] "Flag"  BCM
+
+BO_ 772 CautionLampControl: 2 VCU
+ SG_ CautionLampPeriod : 0|10@1+ (1,0) [0|1000] "ms"  BCM
+ SG_ CautionLampControl : 15|1@1+ (1,0) [0|1] "Flag"  BCM
+
+BO_ 804 TireStateRR: 3 TPMS
+ SG_ WheelRRTemp : 16|7@1- (1,30) [-30|85] "celcius degree"  VCU,CLU
+ SG_ WheelRRPressure : 0|10@1+ (1,0) [0|600] "bar"  VCU,CLU
+
+BO_ 803 TireStateRL: 3 TPMS
+ SG_ WheelRLTemp : 16|7@1- (1,30) [-30|85] "celcius degree"  VCU,CLU
+ SG_ WheelRLPressusre : 0|10@1+ (1,0) [0|600] "bar"  VCU,CLU
+
+BO_ 802 TireStateFR: 3 TPMS
+ SG_ WheelFRTemp : 16|7@1- (1,30) [-30|85] "celcius degree"  VCU,CLU
+ SG_ WheelFRPressure : 0|10@1+ (1,0) [0|600] "bar"  VCU,CLU
+
+BO_ 801 TireStateFL: 3 TPMS
+ SG_ WheelFLTemp : 16|7@1- (1,30) [-30|85] "celcius degree"  VCU,CLU
+ SG_ WheelFLPressure : 0|10@1+ (1,0) [0|600] "bar"  VCU,CLU
+
+
+
+BA_DEF_  "MultiplexExtEnabled" ENUM  "No","Yes";
+BA_DEF_  "BusType" STRING ;
+BA_DEF_DEF_  "MultiplexExtEnabled" "No";
+BA_DEF_DEF_  "BusType" "CAN";
+
