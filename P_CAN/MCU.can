@@ -1,0 +1,116 @@
+﻿/*@!Encoding:65001*/
+includes
+{
+  
+}
+
+variables
+{
+  msTimer motorrpmmonitoring_timer;
+  
+  int motor_rpm = 0;
+  char mcu_alive_flag = 0;
+  int output_limit = 0;
+  int accel_pedal_position = 0;
+  char accel_pedal_position_flag = 0;
+  int mode_status = 0;
+  int regen_motor_rpm = 0;
+  char pcan_healty_check = 0;
+  
+  int delta_rpm = 0; // 10초내로 모터 감소시킬 양
+}
+
+on start
+{
+  cancelTimer(motorrpmmonitoring_timer);
+  setTimerCyclic(motorrpmmonitoring_timer, 30);
+}
+
+on timer motorrpmmonitoring_timer // VCU에 RPM 보내기, 긴급모드에도 보내기
+{ 
+  message PCAN::MotorRpmMonitoring msg;
+  if(mode_status == 2) // 모터 속도 10초 내로 휠 RPM 0으로 만들기(rpm)
+  {
+    motor_rpm -= delta_rpm;
+    if(motor_rpm < 0) msg.Motor_RPM = 0;
+    else msg.Motor_RPM = motor_rpm;
+  }
+  else
+  {
+    msg.Motor_RPM = motor_rpm;    
+  }
+  output(msg);
+}
+
+on message PCAN::BatteryMonitoring0 // 모터 출력 제한
+{
+  if(mode_status != 2) // 긴급모드가 아니라면
+  {
+    output_limit = $PCAN::BatteryMonitoring0::Output_Limit;
+    if(output_limit == 1) // 출력 제한 70%
+    {
+      motor_rpm = (int)(motor_rpm * 0.7);
+    }
+  }
+}
+
+on message PCAN::AccelPedalState // 엑셀페달 밟은 정도에 따른 RPM 증가
+{
+  if(mode_status != 2) // 긴급모드가 아니라면
+  {
+    accel_pedal_position = $PCAN::AccelPedalState::Accel_Pedal_Position;
+    accel_pedal_position_flag = $PCAN::AccelPedalState::Accel_Pedal_Position_Flag;
+    
+    if(accel_pedal_position > 75)
+    {
+      accel_pedal_position += 440;
+    }
+    else if(accel_pedal_position > 50)
+    {
+      accel_pedal_position += 330;
+    }
+    else if(accel_pedal_position > 25)
+    {
+      accel_pedal_position += 220;
+    }
+    else if(accel_pedal_position > 0)
+    {
+      accel_pedal_position += 110;
+    }
+    else
+    {
+      accel_pedal_position += 0;
+    }
+  }
+}
+
+on message MotorRpmUpdate // VCU에서 받은 RPM 업데이트
+{
+  if(mode_status != 2) // 긴급모드가 아니라면
+  {
+  motor_rpm = $PCAN::MotorRpmUpdate::Motor_RPM; // RPM량 바로 투입??
+  }
+}
+
+on message RegenToMcu
+{
+  if(mode_status != 2) // 긴급모드가 아니라면
+  {
+    motor_rpm -= $PCAN::RegenToMcu::Regen_Motor_RPM;
+  }
+}
+
+on message PCAN::PcanModeStatus
+{
+  if($PCAN::PcanModeStatus::Mode_Status == 2){ // 긴급인 경우 ==> 모터 속도 10초 내로 휠 RPM 0으로 만들기(rpm)
+    // rpm 33번으로 나눈 값 저장 -> MotorRpmMonitoring에서 뺀 값 보낼거임
+    delta_rpm = (int)(motor_rpm / 33);
+  }
+}
+
+on message PcanHealthyCheck
+{
+  message MCUAlive msg;
+  msg.MCU_Alive_Flag = 1;
+  output(msg);
+}
