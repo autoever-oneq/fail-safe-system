@@ -1,4 +1,4 @@
-﻿/*@!Encoding:65001*/
+/*@!Encoding:65001*/
 includes
 {
   
@@ -82,7 +82,7 @@ on message PCAN::BasicBrakeReq // 주행 중 브레이크 밟음(주기 메세�
       tot_force = motor_rpm * brake_pedal_position;
       if(brake_pedal_position >= 75 | regen_brake_level == 0)
       {
-        mech_brake_force = tot_force / 100;
+        mech_brake_force = tot_force / 140; // 7857
         brake_status = 2; // 기계만
         regen_brake_force = 0; // 회생제동력 0
       }
@@ -93,8 +93,8 @@ on message PCAN::BasicBrakeReq // 주행 중 브레이크 밟음(주기 메세�
       }
       else
       {
-        regen_brake_force = (int)(tot_force / 100 * regen_brake_level_arr[regen_brake_level]);
-        mech_brake_force = (int)(tot_force / 100 - regen_brake_force);
+        regen_brake_force = (int)(tot_force / 140 * regen_brake_level_arr[regen_brake_level]);
+        mech_brake_force = (int)(tot_force / 140 - regen_brake_force);
         brake_status = 1; // 회생 + 기계
       }
     }
