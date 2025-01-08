@@ -1,0 +1,191 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Panel Type="Vector.CANalyzer.Panels.PanelSerializer, Vector.CANalyzer.Panels.Serializer, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null">
+  <Object Type="Vector.CANalyzer.Panels.Runtime.Panel, Vector.CANalyzer.Panels.Common, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="Panel" ControlName="USER_INPUT">
+    <Object Type="Vector.CANalyzer.Panels.Design.GroupBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X21603db3e45cde43e7eaa44e0bb0ec5be1f3" ControlName="Group Box 9">
+      <Object Type="Vector.CANalyzer.Panels.Design.GroupBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X19d7dbe9e3551e4ff0eafbce7b1d70cea564" ControlName="Group Box 10">
+        <Object Type="Vector.CANalyzer.Panels.Design.SwitchControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X08d1b5efe2208e4c4bea246ef19bd67f2f84" ControlName="Switch / Indicator 4">
+          <Property Name="Name">X08d1b5efe2208e4c4bea246ef19bd67f2f84</Property>
+          <Property Name="Size">66, 87</Property>
+          <Property Name="Location">22, 27</Property>
+          <Property Name="SymbolConfiguration"></Property>
+          <Property Name="ImageFile">UI IMG\ControlBreak.bmp</Property>
+          <Property Name="TabIndex">1</Property>
+          <Property Name="Epsilon">0</Property>
+          <Property Name="Increment">1</Property>
+          <Property Name="StartValue">0</Property>
+        </Object>
+        <Property Name="Name">X19d7dbe9e3551e4ff0eafbce7b1d70cea564</Property>
+        <Property Name="Size">111, 129</Property>
+        <Property Name="Location">306, 24</Property>
+        <Property Name="Text"></Property>
+        <Property Name="TabIndex">2</Property>
+        <Property Name="UseWindowsStyle">False</Property>
+      </Object>
+      <Object Type="Vector.CANalyzer.Panels.Design.GroupBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X41f82eeae5f71e4deae8714ef72d5e25baef" ControlName="Group Box 2">
+        <Object Type="Vector.CANalyzer.Panels.Design.TrackBarControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="Xdbdb7e3ce2db4e456ee9a9cea9f30835ec66" ControlName="Track Bar 2">
+          <Property Name="Name">Xdbdb7e3ce2db4e456ee9a9cea9f30835ec66</Property>
+          <Property Name="Size">231, 30</Property>
+          <Property Name="Location">18, 84</Property>
+          <Property Name="TabIndex">1</Property>
+          <Property Name="MaximumDouble">11</Property>
+          <Property Name="LargeChangeDouble">1</Property>
+          <Property Name="MaximumSize">100000, 30</Property>
+          <Property Name="Maximum">11</Property>
+          <Property Name="LargeChange">1</Property>
+          <Property Name="SymbolConfiguration"></Property>
+        </Object>
+        <Object Type="Vector.CANalyzer.Panels.Design.ProgressBarControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X8a5d1143eb12ae4217e8ec1e7f78d36675a9" ControlName="Progress Bar 2">
+          <Property Name="Name">X8a5d1143eb12ae4217e8ec1e7f78d36675a9</Property>
+          <Property Name="Size">230, 29</Property>
+          <Property Name="Location">19, 36</Property>
+          <Property Name="ValueSize">40, 12</Property>
+          <Property Name="OriginValue">0</Property>
+          <Property Name="SymbolConfiguration"></Property>
+        </Object>
+        <Property Name="Name">X41f82eeae5f71e4deae8714ef72d5e25baef</Property>
+        <Property Name="Size">275, 129</Property>
+        <Property Name="Location">14, 24</Property>
+        <Property Name="Text"></Property>
+        <Property Name="TabIndex">1</Property>
+        <Property Name="UseWindowsStyle">False</Property>
+      </Object>
+      <Property Name="Name">X21603db3e45cde43e7eaa44e0bb0ec5be1f3</Property>
+      <Property Name="Size">434, 169</Property>
+      <Property Name="Location">33, 178</Property>
+      <Property Name="Text">Accelerator</Property>
+      <Property Name="TabIndex">8</Property>
+      <Property Name="UseWindowsStyle">False</Property>
+    </Object>
+    <Object Type="Vector.CANalyzer.Panels.Design.GroupBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="Xd8f686c8eb69ce4361ead29ec0a4fd846b47" ControlName="Group Box 6">
+      <Object Type="Vector.CANalyzer.Panels.Design.GroupBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X1cb73577e9f8fe4da7e8135e3f3a65da5464" ControlName="Group Box 8">
+        <Object Type="Vector.CANalyzer.Panels.Design.ProgressBarControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X39bcd118eb435e42aeead66e49b549efda2e" ControlName="Progress Bar 1">
+          <Property Name="Name">X39bcd118eb435e42aeead66e49b549efda2e</Property>
+          <Property Name="Size">34, 175</Property>
+          <Property Name="Location">28, 24</Property>
+          <Property Name="Alignment">RightBottom</Property>
+          <Property Name="Orientation">Vertical</Property>
+          <Property Name="AlarmUpperLimit">3</Property>
+          <Property Name="Maximum">3</Property>
+          <Property Name="ValueSize">27, 12</Property>
+          <Property Name="OriginValue">0</Property>
+          <Property Name="SymbolConfiguration"></Property>
+        </Object>
+        <Property Name="Name">X1cb73577e9f8fe4da7e8135e3f3a65da5464</Property>
+        <Property Name="Size">155, 214</Property>
+        <Property Name="Location">177, 32</Property>
+        <Property Name="Text"></Property>
+        <Property Name="TabIndex">2</Property>
+        <Property Name="UseWindowsStyle">False</Property>
+      </Object>
+      <Object Type="Vector.CANalyzer.Panels.Design.GroupBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X6118002ce2b47e41d2e93ffe93ab3ef39955" ControlName="Group Box 7">
+        <Object Type="Vector.CANalyzer.Panels.Design.SwitchControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="Xbe4d9873ef404e44fde9289e2369f45d199e" ControlName="Switch / Indicator 2">
+          <Property Name="Name">Xbe4d9873ef404e44fde9289e2369f45d199e</Property>
+          <Property Name="Size">78, 102</Property>
+          <Property Name="Location">34, 32</Property>
+          <Property Name="SymbolConfiguration"></Property>
+          <Property Name="ImageFile">UI IMG\levelup.jpg</Property>
+          <Property Name="TabIndex">1</Property>
+          <Property Name="Epsilon">0</Property>
+          <Property Name="Increment">1</Property>
+          <Property Name="StartValue">0</Property>
+          <Property Name="StateCnt">4</Property>
+          <Property Name="SwitchValuesVTXml">&lt;Version&gt;2&lt;/Version&gt;&lt;Count&gt;4&lt;/Count&gt;&lt;RxValue&gt;0&lt;/RxValue&gt;&lt;LowerUpper&gt;Lower&lt;/LowerUpper&gt;&lt;TxValue&gt;0&lt;/TxValue&gt;&lt;RxValue&gt;1&lt;/RxValue&gt;&lt;LowerUpper&gt;Lower&lt;/LowerUpper&gt;&lt;TxValue&gt;1&lt;/TxValue&gt;&lt;RxValue&gt;2&lt;/RxValue&gt;&lt;LowerUpper&gt;Lower&lt;/LowerUpper&gt;&lt;TxValue&gt;2&lt;/TxValue&gt;&lt;RxValue&gt;3&lt;/RxValue&gt;&lt;LowerUpper&gt;Lower&lt;/LowerUpper&gt;&lt;TxValue&gt;3&lt;/TxValue&gt;</Property>
+          <Property Name="SwitchValuesVT">1;4;0/Lower/0;1/Lower/1;2/Lower/2;3/Lower/3</Property>
+          <Property Name="SwitchValues">1;4;0;1;2;3</Property>
+          <Property Name="SwitchValuesRx">1;4;0;1;2;3</Property>
+        </Object>
+        <Property Name="Name">X6118002ce2b47e41d2e93ffe93ab3ef39955</Property>
+        <Property Name="Size">152, 159</Property>
+        <Property Name="Location">19, 32</Property>
+        <Property Name="Text"></Property>
+        <Property Name="TabIndex">1</Property>
+        <Property Name="UseWindowsStyle">False</Property>
+      </Object>
+      <Property Name="Name">Xd8f686c8eb69ce4361ead29ec0a4fd846b47</Property>
+      <Property Name="Size">346, 260</Property>
+      <Property Name="Location">490, 178</Property>
+      <Property Name="Text">regen_brake</Property>
+      <Property Name="TabIndex">7</Property>
+      <Property Name="UseWindowsStyle">False</Property>
+    </Object>
+    <Object Type="Vector.CANalyzer.Panels.Design.GroupBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X465a2298e485ae4522ebdf9e82fdf143433e" ControlName="Group Box 5">
+      <Object Type="Vector.CANalyzer.Panels.Design.GroupBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X7c6ea990e5565e4e07e9e81ec3f4d06d7cea" ControlName="Group Box 1">
+        <Object Type="Vector.CANalyzer.Panels.Design.SwitchControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X2d30bffce3de3e4086e9f91e4568af10d25f" ControlName="Switch / Indicator 3">
+          <Property Name="Name">X2d30bffce3de3e4086e9f91e4568af10d25f</Property>
+          <Property Name="Size">66, 87</Property>
+          <Property Name="Location">22, 27</Property>
+          <Property Name="SymbolConfiguration"></Property>
+          <Property Name="ImageFile">UI IMG\ControlBreak.bmp</Property>
+          <Property Name="TabIndex">1</Property>
+          <Property Name="Epsilon">0</Property>
+          <Property Name="Increment">1</Property>
+          <Property Name="StartValue">0</Property>
+        </Object>
+        <Property Name="Name">X7c6ea990e5565e4e07e9e81ec3f4d06d7cea</Property>
+        <Property Name="Size">111, 129</Property>
+        <Property Name="Location">306, 21</Property>
+        <Property Name="Text"></Property>
+        <Property Name="TabIndex">2</Property>
+        <Property Name="UseWindowsStyle">False</Property>
+      </Object>
+      <Object Type="Vector.CANalyzer.Panels.Design.GroupBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X0265af54e3062e4824e9b50e951fc50dcaa8" ControlName="Group Box 3">
+        <Object Type="Vector.CANalyzer.Panels.Design.TrackBarControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="Xd99d546feee4ae4faceb0a5ec62ac4b00045" ControlName="Track Bar 3">
+          <Property Name="Name">Xd99d546feee4ae4faceb0a5ec62ac4b00045</Property>
+          <Property Name="Size">231, 30</Property>
+          <Property Name="Location">18, 84</Property>
+          <Property Name="TabIndex">1</Property>
+          <Property Name="MaximumDouble">11</Property>
+          <Property Name="LargeChangeDouble">1</Property>
+          <Property Name="MaximumSize">100000, 30</Property>
+          <Property Name="Maximum">11</Property>
+          <Property Name="LargeChange">1</Property>
+          <Property Name="SymbolConfiguration"></Property>
+        </Object>
+        <Object Type="Vector.CANalyzer.Panels.Design.ProgressBarControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X782fea88e4164e4c6ce8fe3eda00e17fb51b" ControlName="Progress Bar 3">
+          <Property Name="Name">X782fea88e4164e4c6ce8fe3eda00e17fb51b</Property>
+          <Property Name="Size">230, 29</Property>
+          <Property Name="Location">18, 34</Property>
+          <Property Name="ValueSize">40, 12</Property>
+          <Property Name="OriginValue">0</Property>
+          <Property Name="SymbolConfiguration"></Property>
+        </Object>
+        <Property Name="Name">X0265af54e3062e4824e9b50e951fc50dcaa8</Property>
+        <Property Name="Size">275, 129</Property>
+        <Property Name="Location">19, 21</Property>
+        <Property Name="Text"></Property>
+        <Property Name="TabIndex">1</Property>
+        <Property Name="UseWindowsStyle">False</Property>
+      </Object>
+      <Property Name="Name">X465a2298e485ae4522ebdf9e82fdf143433e</Property>
+      <Property Name="Size">434, 169</Property>
+      <Property Name="Location">33, 359</Property>
+      <Property Name="Text">Brake</Property>
+      <Property Name="TabIndex">6</Property>
+      <Property Name="UseWindowsStyle">False</Property>
+    </Object>
+    <Object Type="Vector.CANalyzer.Panels.Design.GroupBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="Xbaad8da6e7d54e459ae9724e1ab40227f914" ControlName="Group Box 4">
+      <Object Type="Vector.CANalyzer.Panels.Design.SwitchControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X36f6b237e7c10e4c4aeb2c8e813f8a7dad9a" ControlName="Switch / Indicator 1">
+        <Property Name="Name">X36f6b237e7c10e4c4aeb2c8e813f8a7dad9a</Property>
+        <Property Name="Size">95, 95</Property>
+        <Property Name="Location">43, 21</Property>
+        <Property Name="SymbolConfiguration"></Property>
+        <Property Name="ImageFile">UI IMG\Vehicle start.jpg</Property>
+        <Property Name="IsProportional">False</Property>
+        <Property Name="TabIndex">1</Property>
+        <Property Name="Epsilon">0</Property>
+        <Property Name="Increment">1</Property>
+        <Property Name="StartValue">0</Property>
+      </Object>
+      <Property Name="Name">Xbaad8da6e7d54e459ae9724e1ab40227f914</Property>
+      <Property Name="Size">183, 129</Property>
+      <Property Name="Location">33, 35</Property>
+      <Property Name="Text">Vehicle Start</Property>
+      <Property Name="TabIndex">5</Property>
+      <Property Name="UseWindowsStyle">False</Property>
+    </Object>
+    <Property Name="Name">Panel</Property>
+    <Property Name="Size">863, 606</Property>
+    <Property Name="Location">0, 0</Property>
+    <Property Name="BackColor">255, 255, 255, 255</Property>
+  </Object>
+</Panel>

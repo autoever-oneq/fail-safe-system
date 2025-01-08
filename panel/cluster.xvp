@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Panel Type="Vector.CANalyzer.Panels.PanelSerializer, Vector.CANalyzer.Panels.Serializer, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null">
+  <Object Type="Vector.CANalyzer.Panels.Runtime.Panel, Vector.CANalyzer.Panels.Common, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="Panel" ControlName="cluster">
+    <Object Type="Vector.CANalyzer.Panels.Design.ProgressBarControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X12f025a2ea578e49f9e97efeebcde366d1e8" ControlName="Progress Bar 1">
+      <Property Name="Name">X12f025a2ea578e49f9e97efeebcde366d1e8</Property>
+      <Property Name="Size">51, 21</Property>
+      <Property Name="Location">479, 265</Property>
+      <Property Name="ValueSize">40, 12</Property>
+      <Property Name="OriginValue">0</Property>
+      <Property Name="SymbolConfiguration"></Property>
+    </Object>
+    <Object Type="Vector.CANalyzer.Panels.Design.LEDControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X0b4f7305ebca8e4127eba8aeb455fafafdfb" ControlName="LED Control 1">
+      <Property Name="Name">X0b4f7305ebca8e4127eba8aeb455fafafdfb</Property>
+      <Property Name="Size">52, 52</Property>
+      <Property Name="Location">108, 30</Property>
+      <Property Name="ReadOnlyControl">True</Property>
+      <Property Name="TabIndex">2</Property>
+      <Property Name="TabStopActive">False</Property>
+      <Property Name="SwitchValuesVTXml">&lt;Version&gt;2&lt;/Version&gt;&lt;Count&gt;3&lt;/Count&gt;&lt;RxValue&gt;0&lt;/RxValue&gt;&lt;LowerUpper&gt;Lower&lt;/LowerUpper&gt;&lt;TxValue&gt;0&lt;/TxValue&gt;&lt;Color&gt;255, 152, 152, 152&lt;/Color&gt;&lt;RxValue&gt;1&lt;/RxValue&gt;&lt;LowerUpper&gt;Lower&lt;/LowerUpper&gt;&lt;TxValue&gt;1&lt;/TxValue&gt;&lt;Color&gt;Orange&lt;/Color&gt;&lt;RxValue&gt;2&lt;/RxValue&gt;&lt;LowerUpper&gt;Lower&lt;/LowerUpper&gt;&lt;TxValue&gt;2&lt;/TxValue&gt;&lt;Color&gt;Red&lt;/Color&gt;</Property>
+      <Property Name="UsedLEDColorOn">Orange</Property>
+      <Property Name="SymbolConfiguration"></Property>
+    </Object>
+    <Object Type="Vector.CANalyzer.Panels.Design.LEDControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="Xd7a20053e1a12e4919e8511ea99966c604dc" ControlName="LED Control 2">
+      <Property Name="Name">Xd7a20053e1a12e4919e8511ea99966c604dc</Property>
+      <Property Name="Size">52, 52</Property>
+      <Property Name="Location">585, 30</Property>
+      <Property Name="ReadOnlyControl">True</Property>
+      <Property Name="TabIndex">6</Property>
+      <Property Name="TabStopActive">False</Property>
+      <Property Name="SwitchValuesVTXml">&lt;Version&gt;2&lt;/Version&gt;&lt;Count&gt;2&lt;/Count&gt;&lt;RxValue&gt;0&lt;/RxValue&gt;&lt;LowerUpper&gt;Lower&lt;/LowerUpper&gt;&lt;TxValue&gt;0&lt;/TxValue&gt;&lt;Color&gt;255, 152, 152, 152&lt;/Color&gt;&lt;RxValue&gt;1&lt;/RxValue&gt;&lt;LowerUpper&gt;Lower&lt;/LowerUpper&gt;&lt;TxValue&gt;1&lt;/TxValue&gt;&lt;Color&gt;MediumBlue&lt;/Color&gt;</Property>
+      <Property Name="UsedLEDColorOn">MediumBlue</Property>
+      <Property Name="SymbolConfiguration"></Property>
+    </Object>
+    <Object Type="Vector.CANalyzer.Panels.Design.SwitchControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="Xcfd3fcfde42e7e4299e853dea63fd85bd13d" ControlName="Switch / Indicator 2">
+      <Property Name="Name">Xcfd3fcfde42e7e4299e853dea63fd85bd13d</Property>
+      <Property Name="Size">81, 105</Property>
+      <Property Name="Location">449, 0</Property>
+      <Property Name="SymbolConfiguration"></Property>
+      <Property Name="ImageFile">UI IMG\KakaoTalk_20250107_165413110_01.png</Property>
+      <Property Name="TabIndex">5</Property>
+      <Property Name="Epsilon">0</Property>
+      <Property Name="Increment">1</Property>
+      <Property Name="StartValue">0</Property>
+    </Object>
+    <Object Type="Vector.CANalyzer.Panels.Design.SwitchControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X8c0a554eed7ffe4954ebd65edd08e479f02e" ControlName="Switch / Indicator 1">
+      <Property Name="Name">X8c0a554eed7ffe4954ebd65edd08e479f02e</Property>
+      <Property Name="Size">81, 105</Property>
+      <Property Name="Location">209, 5</Property>
+      <Property Name="SymbolConfiguration"></Property>
+      <Property Name="ImageFile">UI IMG\KakaoTalk_20250107_165413110.png</Property>
+      <Property Name="TabIndex">4</Property>
+      <Property Name="Epsilon">0</Property>
+      <Property Name="Increment">1</Property>
+      <Property Name="StartValue">0</Property>
+    </Object>
+    <Object Type="Vector.CANalyzer.Panels.Design.LCDControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="Xf6723febe7345e459ae84d2e2b5442f1790e" ControlName="LCD Control 1">
+      <Property Name="Name">Xf6723febe7345e459ae84d2e2b5442f1790e</Property>
+      <Property Name="Size">116, 35</Property>
+      <Property Name="Location">62, 224</Property>
+      <Property Name="SymbolConfiguration"></Property>
+    </Object>
+    <Object Type="Vector.CANalyzer.Panels.Design.StaticTextControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X6fcea393efa7ae4edfea648e5a7fc77477d7" ControlName="Static Text 1">
+      <Property Name="Name">X6fcea393efa7ae4edfea648e5a7fc77477d7</Property>
+      <Property Name="Size">124, 18</Property>
+      <Property Name="Location">550, 247</Property>
+      <Property Name="ForeColor">White</Property>
+      <Property Name="Font">Microsoft Sans Serif, 10pt</Property>
+      <Property Name="Text">Regen Brake Force</Property>
+    </Object>
+    <Object Type="Vector.CANalyzer.Panels.Design.LCDControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="Xf090be51eba35e49c6ebb53e7bb5dad9cdaf" ControlName="LCD Control 3">
+      <Property Name="Name">Xf090be51eba35e49c6ebb53e7bb5dad9cdaf</Property>
+      <Property Name="Size">116, 35</Property>
+      <Property Name="Location">62, 127</Property>
+      <Property Name="SymbolConfiguration"></Property>
+    </Object>
+    <Object Type="Vector.CANalyzer.Panels.Design.MeterControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X8952c211e8db5e41d2e984aeabc3b049012f" ControlName="Meter 1">
+      <Property Name="Name">X8952c211e8db5e41d2e984aeabc3b049012f</Property>
+      <Property Name="Size">118, 103</Property>
+      <Property Name="Location">550, 127</Property>
+      <Property Name="SymbolConfiguration"></Property>
+      <Property Name="AlarmLowerLimit">1.5</Property>
+      <Property Name="AlarmUpperLimit">1.5</Property>
+      <Property Name="SweepAngleFrom">-180</Property>
+      <Property Name="SweepAngleTo">-40</Property>
+      <Property Name="ScaleMax">1.5</Property>
+    </Object>
+    <Object Type="Vector.CANalyzer.Panels.Design.LCDControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X301ec9bdec953e47f2e9927ed66573910429" ControlName="LCD Control 2">
+      <Property Name="Name">X301ec9bdec953e47f2e9927ed66573910429</Property>
+      <Property Name="Size">136, 36</Property>
+      <Property Name="Location">304, 155</Property>
+      <Property Name="SymbolConfiguration"></Property>
+    </Object>
+    <Object Type="Vector.CANalyzer.Panels.Design.PictureBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X6e0c1276eda0fe4f6fe9218e68ce213eef33" ControlName="Picture Box 1">
+      <Property Name="Name">X6e0c1276eda0fe4f6fe9218e68ce213eef33</Property>
+      <Property Name="Size">700, 300</Property>
+      <Property Name="Location">24, 5</Property>
+      <Property Name="IsProportional">False</Property>
+      <Property Name="ImageFile">UI IMG\cluster.jpg</Property>
+    </Object>
+    <Property Name="Name">Panel</Property>
+    <Property Name="Size">738, 321</Property>
+    <Property Name="Location">0, 0</Property>
+    <Property Name="BackColor">255, 255, 255, 255</Property>
+  </Object>
+</Panel>
