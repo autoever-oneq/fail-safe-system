@@ -1,4 +1,4 @@
-﻿/*@!Encoding:65001*/
+/*@!Encoding:65001*/
 includes
 {
   
@@ -7,93 +7,80 @@ includes
 variables
 {
   /* Timer */
-  msTimer alive_timer;
+  msTimer message_timer_10ms; // 주기 메시지를 위한 타이머
+  int timer_cnt = 0;          // 타이머 카운터
+  int alive_cnt = 0;          // ECU 상태 확인용 카운터
   
-  /* Rx signal */
-  int battery_volt; // 0 ~ 1000
-  int battery_soh;  // 0 ~ 100
-  int battery_soc;  // 0 ~ 100
-  int battery_temp;
+  char alive_flag;            // ECU 상태 확인용 flag 변수
+}
+
+void alive_check()
+{ 
+  if(alive_flag == 0x7)     // 전부 정상 확인
+  {
+    // 상태 확인 초기화
+    alive_cnt = 0;
+    alive_flag = 0;
+  }
+}
+
+/* VCU(Tx) -> Other ECU(Rx) */
+void output_100ms()
+{
+  // 0x251
+  message PcanHealthyCheck msg;
+  output(msg);
+}
+
+// Tx Cyclic message
+on timer message_timer_10ms
+{
+  timer_cnt++;
+  alive_cnt++;
   
-  char output_limit; // 배터리 온도에 따른 모터출력제한 [True/False]
+  if(alive_cnt >= 30)       // 300ms 지남
+  {
+    // 0x201
+    message PcanModeStatus msg;
+    msg.Mode_Status = 2;
+    output(msg);
+  }
   
-  int remain_range; // 현재 SOC 기준 남은 예상 주행 거리
-  char break_status;  // 0 : 회생제동 only, 1 : 회생제동 + brake, 2 : brake only
-  
-  int regen_brake_force;  // 회생제동력
-  int mech_brake_force; // 일반 브레이크 제동력
-  
-  int alive_flag;
-  
-  int motor_rpm;
+  if(timer_cnt % 10 == 0) {output_100ms();}
 }
 
 /* Initialize */
 on preStart
 {
-  setTimer(alive_timer, 300);
+  
 }
 
 on start
 {
-
+  setTimerCyclic(message_timer_10ms, 10);
 }
-
 
 /* PCAN */
-// BMU
-on message PCAN::BatteryMonitoring0
+/* BMU */
+// 0x253
+on message Pcan::BMUAlive
 {
-  battery_volt = $PCAN::BatteryMonitoring0::Battery_Volt;
-  battery_soh = $PCAN::BatteryMonitoring0::Battery_SOH;
-  output_limit = $PCAN::BatteryMonitoring0::Output_Limit;
-  battery_temp = $PCAN::BatteryMonitoring0::Battery_Temp;
-}
-on message PCAN::BatteryMonitoring1
-{
-  battery_soc = $PCAN::BatteryMonitoring1::Battery_SOC;
-}
-on message PCAN::BMUAlive
-{
-  /*
-  alive_flag |= 1 << (??);
-  if(alive_flag == 32b000...11111111)
-  {
-    cancelTimer(alive_timer);
-    setTimer(alive_timer, 300);
-  }
-  */
+  alive_flag |= (this.BMU_Alive_Flag) << 0; // 0번째 비트 : BMU
+  alive_check();
 }
 
-on timer alive_timer
-{
-  // 고장 상태 flag 메시지 모든 CAN channel에 보내기
-}
-
-/*
-on message PCAN::RemainingRangeCal
-{
-  
-}
-*/
-
-
-// AHB
-on message PCAN::BrakeResp
-{
-  
-}
+/* AHB */
+// 0x254
 on message PCAN::AHBAlive
 {
-  
+  alive_flag |= (this.AHB_Alive_Flag) << 1; // 1번째 비트 : BMU
+  alive_check();
 }
 
-// MCU
-on message PCAN::MotorRpmMonitoring
-{
-  
-}
+/* MCU */
+// 0x255
 on message PCAN::MCUAlive
 {
-  
+  alive_flag |= (this.MCU_Alive_Flag) << 2; // 2번째 비트 : MCU
+  alive_check();
 }
