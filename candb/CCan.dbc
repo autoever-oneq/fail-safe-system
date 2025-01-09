@@ -33,7 +33,7 @@ NS_ :
 
 BS_:
 
-BU_: EPB SbW_S1 BbW_S1 ABS C_Cluster SbW_S0 BbW_A1 SbW_A1 SbW_A0 BbW_S0 BbW_A0 VCU
+BU_: EPB SbW_S1 BbW_S1 ABS CLU SbW_S0 BbW_A1 SbW_A1 SbW_A0 BbW_S0 BbW_A0 VCU
 
 
 BO_ 3221225472 VECTOR__INDEPENDENT_SIG_MSG: 0 Vector__XXX
@@ -111,7 +111,7 @@ BO_ 273 BrakeCommand1: 2 BbW_S1
  SG_ BrakeConnectionState : 0|1@1+ (1,0) [0|1] "flag"  BbW_A1,BbW_A0
 
 BO_ 309 WheelStatus1: 2 BbW_A1
- SG_ WheelSpeed : 0|10@1+ (1,0) [0|1023] "rpm"  VCU,SbW_S1,SbW_S0,SbW_A1,SbW_A0,C_Cluster,BbW_S1,BbW_S0,BbW_A0
+ SG_ WheelSpeed : 0|10@1+ (1,0) [0|1023] "rpm"  VCU,SbW_S1,SbW_S0,SbW_A1,SbW_A0,CLU,BbW_S1,BbW_S0,BbW_A0
 
 BO_ 259 CommandResetBrake: 1 VCU
  SG_ HardResetBbWS1 : 3|1@1+ (1,0) [0|1] "flag"  BbW_S1
@@ -151,8 +151,8 @@ BO_ 354 SetABS: 1 ABS
  SG_ ABSActive : 0|1@1+ (1,0) [0|1] "flag"  VCU
 
 BO_ 261 CANHealthyCheck: 1 VCU
- SG_ CAN2Healthy : 1|1@1+ (1,0) [0|1] "flag"  ABS,BbW_S0,BbW_S1,C_Cluster,SbW_S1,SbW_S0,SbW_A1,SbW_A0,BbW_A1,BbW_A0
- SG_ CAN1Healthy : 0|1@1+ (1,0) [0|1] "flag"  ABS,SbW_S1,BbW_S1,BbW_A0,BbW_S0,BbW_A1,C_Cluster,SbW_A0,SbW_A1,SbW_S0
+ SG_ CAN2Healthy : 1|1@1+ (1,0) [0|1] "flag"  ABS,BbW_S0,BbW_S1,CLU,SbW_S1,SbW_S0,SbW_A1,SbW_A0,BbW_A1,BbW_A0
+ SG_ CAN1Healthy : 0|1@1+ (1,0) [0|1] "flag"  ABS,SbW_S1,BbW_S1,BbW_A0,BbW_S0,BbW_A1,CLU,SbW_A0,SbW_A1,SbW_S0
 
 BO_ 257 SetBrake: 1 VCU
  SG_ SetPrimarySensorBrake : 0|1@1+ (1,0) [0|1] "flag"  SbW_A0,BbW_A0,BbW_A1
@@ -182,10 +182,10 @@ BO_ 274 BrakePedalState0: 1 BbW_S0
  SG_ BrakePedalActive : 0|1@1+ (1,0) [0|1] "flag"  BbW_A1,BbW_A0,ABS,VCU
 
 BO_ 256 DriveModeStatus: 1 VCU
- SG_ ModeState : 0|2@1+ (1,0) [0|3] ""  C_Cluster,BbW_A0,BbW_A1
+ SG_ ModeState : 0|2@1+ (1,0) [0|3] ""  CLU,BbW_A0,BbW_A1
 
 BO_ 308 WheelStatus0: 2 BbW_A0
- SG_ WheelSpeed : 0|10@1+ (1,0) [0|1023] "rpm"  VCU,ABS,BbW_A1,BbW_S0,BbW_S1,C_Cluster,SbW_A0,SbW_A1,SbW_S0,SbW_S1
+ SG_ WheelSpeed : 0|10@1+ (1,0) [0|1023] "rpm"  VCU,ABS,BbW_A1,BbW_S0,BbW_S1,CLU,SbW_A0,SbW_A1,SbW_S0,SbW_S1
 
 
 
