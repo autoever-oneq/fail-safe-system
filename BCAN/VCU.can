@@ -1,0 +1,130 @@
+﻿/*@!Encoding:65001*/
+includes
+{
+}
+variables
+{
+  msTimer loop;
+  int Timer_1000ms = 0;
+  int Timer_10s = 0;
+  int StartUpFlag = 0;
+}
+on start
+{
+  setTimerCyclic(loop, 100);
+  @sysvar::HW::LEFTTURNON = 0;
+  @sysvar::HW::RIGHTTURNON = 0;
+  @sysvar::HW::TIREALERT = 0;
+}
+
+
+on timer loop
+{
+  TimeScheduling100ms();
+  Timer_1000ms ++;
+  if (Timer_1000ms % 10 == 0) {
+    Timer_1000ms = 0;
+    Timer_10s ++;
+    TimeScheduling1sec();
+    if (Timer_10s % 10 == 0) {
+      Timer_10s = 0;
+      TimeScheduling10sec();
+    } 
+  }  
+}
+
+void TimeScheduling100ms(){
+  sendMsg_FrmVCU_CLU_100ms();
+}
+void TimeScheduling1sec(){
+  sendMsg_FrmPCAN_CLU_1000ms();
+}
+void TimeScheduling10sec(){
+}
+
+
+
+on sysvar_update INPUT::BRAKEINPUT
+{
+  sendMsg_BrakeInputFlag(@sysvar::INPUT::BRAKEINPUT);  
+}
+
+on message CautionTurnInput
+{
+  sendMsg_CautionLampControl(this.CautionTurnSignal);  
+}
+
+on message LeftTurnInput
+{
+  sendMsg_LeftTurnSignalControl(this.LeftTurnInputSignal);  
+}
+
+on message RightTurnInput
+{
+  sendMsg_RightTurnSignalControl(this.RightTurnInputSignal);  
+}
+
+on message IgnitionOn 
+{
+  StartUpFlag = this.IgnitionFlag;
+  sendMsg_StartUp(this.IgnitionFlag);
+}
+
+
+
+
+void sendMsg_BrakeInputFlag(int ButtonState){
+  message BrakeInputFlag msg;
+  msg.BrakeInputFlag.phys = ButtonState;
+  if(StartUpFlag == 1) output(msg);
+}
+
+void sendMsg_CautionLampControl(int ButtonState)
+{
+  message CautionLampControl msg;
+  msg.CautionLampControl.phys = ButtonState;
+  if(StartUpFlag == 1) output(msg);
+}
+
+void sendMsg_LeftTurnSignalControl(int ButtonState)
+{
+  message LeftTurnSignalLampControl msg;
+  msg.LeftTurnSignalControl.phys = ButtonState;
+  msg.LeftTurnSignalPeriod.phys = 500;
+  if(StartUpFlag == 1) output(msg);
+}
+
+void sendMsg_RightTurnSignalControl(int ButtonState)
+{
+  message RightTurnSignalLampControl msg;
+  msg.RightTurnSignalControl.phys = ButtonState;
+  msg.RightTurnSignalPeriod.phys = 500;
+  if(StartUpFlag == 1) output(msg);
+}
+
+void sendMsg_FrmVCU_CLU_100ms()
+{
+  message FrmVCU_CLU_100ms msg;
+  msg.CurVelocity.phys = 50;
+  if(StartUpFlag == 1) output(msg); 
+}
+
+void sendMsg_FrmPCAN_CLU_1000ms()
+{
+  message FrmPCAN_CLU_1000ms msg;
+  msg.Regen_Brake_Status.phys = 0;
+  msg.Battery_Output_Limit.phys = 0;
+  msg.BatterySOC.phys = 100;
+  msg.BatteryTemp.phys = 0;
+  if(StartUpFlag == 1) output(msg); 
+}
+
+
+void sendMsg_StartUp(int ButtonState){
+  message StartUp msg;
+  msg.StartUpSignal.phys = ButtonState;
+  output(msg);
+}
+
+
+

@@ -1,0 +1,185 @@
+﻿/*@!Encoding:65001*/
+includes
+{
+  
+}
+
+variables
+{
+  msTimer loop;
+  int Caution_Lamp_Status = 0;
+  int Drive_Mode_Status = 0;
+  int GearInputLevel = 0;
+  int StartUpFlag = 0;
+  
+  int LastLeftTurn = 0;
+  int LastRightTurn = 0;
+  int LastCautionLight = 0;
+  
+  int LeftButtonStatus = 0;
+  int RightButtonStatus = 0;
+  int CautionButtonStatus = 0;
+  
+  enum {
+    GENERAL_MODE = 0,
+    CAUTION_MODE = 1,
+    EMERGENCY_MODE = 2
+  }DRIVE_MODE;
+  const int STAGE_GEAR_INPUT = 4;
+}
+
+on start
+{
+  setTimerCyclic(loop,5000);
+  @sysvar::HW::BRAKELIGHT = 0;
+  @sysvar::HW::LEFTTURNON = 0;
+  @sysvar::HW::RIGHTTURNON = 0;
+  sendMsg_GearInput(GearInputLevel);
+}
+
+on timer loop
+{
+  sendMsg_FLTurnVoltCurrent();
+  sendMsg_FRTurnVoltCurrent();
+  sendMsg_RLTurnVoltCurrent();
+  sendMsg_RRTurnVoltCurrent();
+}
+
+
+
+on sysvar_update INPUT::GEARINPUT
+{
+  if (StartUpFlag == 1){
+    if (@sysvar::INPUT::GEARINPUT == 1){
+      GearInputLevel++;
+      if(GearInputLevel == STAGE_GEAR_INPUT) {
+        GearInputLevel = 0;
+      }
+    sendMsg_GearInput(GearInputLevel);
+    }
+  }
+}
+
+on message StartUp
+{
+  StartUpFlag = this.StartUpSignal;
+}
+
+on message LeftTurnSignalLampControl
+{
+  LeftButtonStatus = this.LeftTurnSignalControl;
+  if (Caution_Lamp_Status == 0){
+    if (this.LeftTurnSignalControl == 1) {
+      if (@sysvar::HW::RIGHTTURNON == 1){
+        @sysvar::HW::RIGHTTURNON = 0;
+      }
+      @sysvar::HW::LEFTTURNON = 1; 
+    }
+    else if (this.LeftTurnSignalControl == 0) {
+      @sysvar::HW::LEFTTURNON = 0;
+    }
+  }
+}
+
+on message RightTurnSignalLampControl
+{
+  RightButtonStatus = this.RightTurnSignalControl;
+  if (Caution_Lamp_Status == 0){
+    if ($RightTurnSignalControl == 1) {
+      if (@sysvar::HW::LEFTTURNON == 1){
+        @sysvar::HW::LEFTTURNON = 0;
+      }
+      @sysvar::HW::RIGHTTURNON = 1;
+    }
+    else if ($RightTurnSignalControl == 0) {
+      @sysvar::HW::RIGHTTURNON = 0;
+    }
+  }
+}
+
+on message CautionLampControl
+{
+  CautionButtonStatus = this.CautionLampControl;
+  if (Drive_Mode_Status != EMERGENCY_MODE)
+    if (this.CautionLampControl == 1) {
+      LastLeftTurn = @sysvar::HW::LEFTTURNON;
+      LastRightTurn = @sysvar::HW::RIGHTTURNON;
+      @sysvar::HW::RIGHTTURNON = 1;
+      @sysvar::HW::LEFTTURNON = 1;
+      Caution_Lamp_Status = 1;
+      LastCautionLight = 1;
+    }
+    else {   
+      @sysvar::HW::LEFTTURNON = LastLeftTurn;
+      @sysvar::HW::RIGHTTURNON = LastRightTurn;
+      Caution_Lamp_Status = 0;
+      LastCautionLight = 0;
+    }
+    else {
+      LastCautionLight = this.CautionLampControl;
+    }
+}
+
+
+on message BrakeInputFlag
+{
+  if (this.BrakeInputFlag == 1) {
+    @sysvar::HW::BRAKELIGHT = 1;
+  }
+  else {
+    @sysvar::HW::BRAKELIGHT = 0;
+  }
+}
+
+
+
+on message DriveMode
+{
+  Drive_Mode_Status = this.DriveMode;
+  if (Drive_Mode_Status == EMERGENCY_MODE) {
+    Caution_Lamp_Status = 1;
+    @sysvar::HW::LEFTTURNON = 1;
+    @sysvar::HW::RIGHTTURNON = 1;  
+  }
+  else {
+    if (LastCautionLight == 0){
+      @sysvar::HW::LEFTTURNON = LeftButtonStatus;
+      @sysvar::HW::RIGHTTURNON = RightButtonStatus;  
+    }
+    else {
+      @sysvar::HW::LEFTTURNON = LeftButtonStatus;
+      @sysvar::HW::RIGHTTURNON = RightButtonStatus;  
+    }
+  }
+}
+
+void sendMsg_FLTurnVoltCurrent() {
+  message FLTurnVoltCurrent msg;
+  msg.FLCurrent.phys = 20;
+  msg.FLVolt.phys = 3;
+  if(StartUpFlag == 1) output(msg);
+}
+void sendMsg_FRTurnVoltCurrent() {
+  message FRTurnVoltCurrent msg;
+  msg.FRCurrent.phys = 20;
+  msg.FRVolt.phys = 3;
+  if(StartUpFlag == 1) output(msg);
+}
+void sendMsg_RLTurnVoltCurrent() {
+  message RLTurnVoltCurrent msg;
+  msg.RLCurrent.phys = 20;
+  msg.RLVolt.phys = 3;
+  if(StartUpFlag == 1) output(msg);
+}
+void sendMsg_RRTurnVoltCurrent() {
+  message RRTurnVoltCurrent msg;
+  msg.RRCurrent.phys = 20;
+  msg.RRVolt.phys = 3;
+  if(StartUpFlag == 1) output(msg);
+}
+
+void sendMsg_GearInput(int ButtonState){
+  message GearInput msg;
+  msg.GearInput.phys = GearInputLevel;
+  if(StartUpFlag == 1) output(msg);  
+}

@@ -1,0 +1,137 @@
+﻿/*@!Encoding:65001*/
+includes
+{
+  
+}
+
+
+variables
+{
+  msTimer loop;
+  int Timer_1s = 0;
+  struct TirePressure_t{
+    int FL;
+    int FR;
+    int RL;
+    int RR;
+  };
+  struct TirePressure_t LastTireStatus = {500,500,500,500};
+  struct TirePressure_t CurrentTireStatus = {500,500,500,500};
+  int StartUpFlag = 0;
+}
+
+on start 
+{
+  setTimerCyclic(loop,100);
+  @sysvar::STATUS::FLTIREPRESSURE = 500;
+  @sysvar::STATUS::FRTIREPRESSURE = 500;
+  @sysvar::STATUS::RLTIREPRESSURE = 500;
+  @sysvar::STATUS::RRTIREPRESSURE = 500;
+  ReadTireStatus();
+  UpdateTireStatus();
+}
+
+on timer loop
+{
+  TimeScheduling1sec();
+  Timer_1s ++;
+  if (Timer_1s % 10 == 0){
+    Timer_1s = 0;
+    TimeScheduling10sec();
+  }
+}
+
+void TimeScheduling1sec() {
+  ReadTireStatus();
+  TireAlert();
+  sendMsg_TireStateFL();
+  sendMsg_TireStateFR();
+  sendMsg_TireStateRL();
+  sendMsg_TireStateRR();
+}
+
+void TimeScheduling10sec(){
+  UpdateTireStatus();
+}
+
+
+
+on message StartUp
+{
+  StartUpFlag = this.StartUpSignal;
+}
+
+
+
+void ReadTireStatus(){
+  if (StartUpFlag == 1){
+    CurrentTireStatus.FL = @sysvar::STATUS::FLTIREPRESSURE;
+    CurrentTireStatus.FR = @sysvar::STATUS::FRTIREPRESSURE;
+    CurrentTireStatus.RL = @sysvar::STATUS::RLTIREPRESSURE;
+    CurrentTireStatus.RR = @sysvar::STATUS::RRTIREPRESSURE;  
+  }
+}
+
+
+void UpdateTireStatus(){
+  if (StartUpFlag == 1) {
+    LastTireStatus.FL = CurrentTireStatus.FL;
+    LastTireStatus.FR = CurrentTireStatus.FR;
+    LastTireStatus.RL = CurrentTireStatus.RL;
+    LastTireStatus.RR = CurrentTireStatus.RR;
+  }
+}
+
+int Compare_TirePressure(int last, int cur) {
+  return (abs(last - cur) >= last * 0.6);
+}
+
+void TireAlert(){
+  if ((Compare_TirePressure(LastTireStatus.FL,CurrentTireStatus.FL))||
+      (Compare_TirePressure(LastTireStatus.FR,CurrentTireStatus.FR))||
+      (Compare_TirePressure(LastTireStatus.RL,CurrentTireStatus.RL))||
+      (Compare_TirePressure(LastTireStatus.RR,CurrentTireStatus.RR)))
+  {
+    sendMsg_TireAlert();
+  }
+}
+
+
+
+void sendMsg_TireStateFL() 
+{
+  message TireStateFL msg;
+  msg.WheelFLPressure.phys = CurrentTireStatus.FL;
+  msg.WheelFLTemp.phys = 60;
+  if(StartUpFlag == 1) output(msg);
+}
+
+void sendMsg_TireStateFR() 
+{
+  message TireStateFR msg;
+  msg.WheelFRPressure.phys = CurrentTireStatus.FR;
+  msg.WheelFRTemp.phys = 60;
+  if(StartUpFlag == 1) output(msg);
+}
+
+void sendMsg_TireStateRL() 
+{
+  message TireStateRL msg;
+  msg.WheelRLPressure.phys = CurrentTireStatus.RL;
+  msg.WheelRLTemp.phys = 60;
+  if(StartUpFlag == 1) output(msg);
+}
+
+void sendMsg_TireStateRR() 
+{
+  message TireStateRR msg;
+  msg.WheelRRPressure.phys = CurrentTireStatus.RR;
+  msg.WheelRRTemp.phys = 60;
+  if(StartUpFlag == 1) output(msg);
+}
+
+void sendMsg_TireAlert(){
+  message TirePressureAlert msg;
+  msg.TireAlertFlag.phys = 1;
+  if(StartUpFlag == 1) output(msg);
+}
