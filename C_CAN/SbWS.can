@@ -1,0 +1,181 @@
+﻿/*@!Encoding:65001*/
+includes
+{
+  
+}
+
+variables
+{
+  msTimer SbWS_timer;
+  
+  // VCU's
+  byte ecuisPrimary=0;
+  byte SbWS_Machinstate =0;
+  word ecuStatusMsgCnt =0;
+  byte primaryBus =0;
+  byte SbWS_FailCount;
+  byte SbWS_FailInfo;
+  
+  byte modeState; // vehicle mode 0(normal) 1(caution) 2(emergency)
+  byte setPrimaryAct; // 0 or 1 to select 
+  byte HardResetSig; // 1 to reset
+  byte isHealthyBus; // 0(none),1,2,3(both)
+  
+  int wheelSpeed=0;
+  
+  // Self Data
+  long SteerDriverAngle;
+  long SteerDriverAngle_before=0;
+  int SteerDriverTorque=0;
+  
+  int SteerAngle=0;
+  int SteerAngleBefore=0;
+  int SteerWheelTorque=0;
+  byte SteerConnectionState=0;
+  int carspeed=0;
+  
+  // Actuator info
+  byte PrimaryAct; // 0 or 1
+  int SteerFeedback;
+  
+  
+ 
+}
+
+on start
+{
+  setTimerCyclic(SbWS_timer,10);
+}
+
+on message CCAN1::DriveModeStatus{
+  modeState = this.ModeState;
+    if (modeState == 0) {
+
+    } 
+    else if (modeState == 1) { 
+      // 여기에 modeState가 1일 때 실행할 코드를 추가
+    } 
+    else if (modeState == 2) {
+      // 여기에 modeState가 2일 때 실행할 코드를 추가
+    } 
+    else {
+        // 다른 값에 대한 예외 처리
+    }
+}
+
+on message CCAN1::SetSteer{
+  if(this.SetPrimarySensorSteer){
+    ecuisPrimary=0;
+    //for S1
+  }
+  else{
+    ecuisPrimary=1;
+    SteerConnectionState=1;
+   //for S0
+  }
+  
+}
+
+on message CCAN1::PowertrainStatus{
+ carspeed=this.VehicleSpeed; 
+}
+
+
+
+on message CCAN1::CommandResetSteer{
+ 
+  if(this.HardResetSbWS0){
+   SbWS_FailCount =0;
+   //S1 reset
+ }
+}
+
+
+
+
+on message CCAN1::CANHealthyCheck{
+ if(!this.CAN1Healthy){
+   if(!this.CAN2Healthy){
+      primaryBus = 0; 
+    }
+    else{
+      primaryBus =2;   
+    }
+ }
+ else{
+     primaryBus = 1;    
+   
+ }
+}
+
+
+on message CCAN1::SteerFeedback0{
+    if (PrimaryAct == 0){
+        if(SteerAngle != this.SteerFeedbackAngle){
+            SbWS_FailCount++;
+          //message
+            //SteerSensor0FailStatus.SbWS_FailCount = SbWS_FailCount;
+         } 
+    }
+  
+  }
+
+
+on timer SbWS_timer
+{
+  SteerAngle = CalcAngleWithRestore(SteerAngle, SteerDriverAngle, carspeed, SteerDriverAngle_before, 1);
+  SteerDriverAngle_before = SteerDriverAngle;
+  
+  writeCommand0(SteerAngle, SteerConnectionState);
+  
+}
+
+
+
+int CalcAngleWithRestore(int theta_bf, long steer, int speed, long driver_angle_before, int restore_rate) {
+    int theta;
+    theta = steer / 16;
+
+    // 입력 변화가 없으면 복원 동작 수행
+    if (steer == driver_angle_before) {
+        if (theta > 0) {
+            theta -= restore_rate;  // 양수 각도 감소
+            if (theta < 0) theta = 0;  // 0으로 복원
+        } else if (theta < 0) {
+            theta += restore_rate;  // 음수 각도 증가
+            if (theta > 0) theta = 0;  // 0으로 복원
+        }
+    }
+
+    // 속도에 따른 각도 제한
+   if (speed >= 40 && speed < 80) {
+        // 변화량이 10도를 넘지 않도록 제한
+        if (abs(theta - theta_bf) > 10) {
+            theta = (theta > theta_bf) ? theta_bf + 1 : theta_bf - 1;
+        }
+        if (abs(theta) > 20) {
+            theta = (theta < 0) ? -20 : 20;
+        }
+    } else if (speed >= 80) {
+        // 변화량이 1도를 넘지 않도록 제한
+        if (abs(theta - theta_bf) > 1) {
+            theta = (theta > theta_bf) ? theta_bf + 1 : theta_bf - 1;
+        }
+        if (abs(theta) > 10) {
+            theta = (theta < 0) ? -10 : 10;
+        }
+    }
+
+    return theta;
+}
+
+
+
+void writeCommand0(int SteerAngle, int SteerConnectionState) {
+message SteerCommand0 cmd;
+  cmd.SteerAngle = SteerAngle;
+  cmd.SteerWheelTorque=SteerWheelTorque;
+  cmd.SteerConnectionState = SteerConnectionState;
+  output(cmd);
+}
+
