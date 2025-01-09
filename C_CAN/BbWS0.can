@@ -1,0 +1,185 @@
+﻿/*@!Encoding:65001*/
+includes
+{
+  
+}
+
+variables
+{
+    /* Structs and Enums */
+  /* Common Enums */
+  enum MachineState {
+    NORMAL = 0,
+    CAUTION = 1,
+    EMERGENCY = 2
+  };
+  
+  
+  /* Redundancy */
+  enum Sensor {
+    SENSOR_0 = 0,
+    SENSOR_1 = 1
+  };
+  
+  
+  enum Actuator {
+    ACTUATOR_0 = 0,
+    ACTUATOR_1 = 1
+  };
+  
+  
+  enum CanBus {
+    BOTH = 0,
+    CAN_1 = 1,
+    CAN_2 = 2,
+    NEITHER = 3
+  };
+  
+  
+  /* ECU Messages Enums */
+  enum AbsActive {
+    ABS_INACTIVE = 0,
+    ABS_ACTIVE = 1
+  };
+  
+  
+  enum ErrorSig {
+    SIGNAL_FAIL = 0,
+    SIGNAL_SUCCESS = 1
+  };
+  
+  
+  enum ConnectionState {
+    DISCONNECTED = 0,
+    CONNECTED = 1
+  };
+  
+  
+  enum PedalState {
+    PEDAL_INACTIVE = 0,
+    PEDAL_ACTIVE = 1
+  };
+  
+  
+  enum FailInfo {
+    CAN_BUSY = 0,
+    SENSOR_ERR = 1,
+    ACTUATOR_ERR = 2
+  };
+  
+  
+  enum Bus {
+    BUS1 = 1,
+    BUS2 = 2
+  };
+  
+  
+  /* Redundancy Structs */
+  struct PrimaryEcu {
+    enum Sensor sensor;
+    enum Actuator actuator;
+  };
+  
+  
+  /* ECU Message Structs */
+  struct BbWSStatus {
+    byte isPrimary;
+    enum MachineState state;
+    int msgCount;
+    enum CanBus primaryBus;
+  };
+  
+  struct BrakeCommand {
+    int activeBrakePressure;
+    enum ConnectionState sensorState;
+    enum PedalState pedalState;
+  };
+  
+  
+  struct BrakeFeedback {
+    int feedbackPressure;
+    int wheelSpeed;
+    enum AbsActive feedbackAbsActive;
+    enum ErrorSig errorSig;
+  };
+  
+  
+  struct FailStatus {
+    int failCount;
+    enum FailInfo failInfo;
+  };
+  
+  
+   /* Constant */
+  const int RATIO_10MS    = 1;
+  const int RATIO_20MS    = 2;
+  const int RATIO_50MS    = 5;
+  const int RATIO_100MS   = 10;
+  const int RATIO_1000MS  = 100;
+  
+  const int BRAKE_PRESSURE_LOW_LIMIT = 40;
+  const int BRAKE_PRESSURE_HIGH_LIMIT = 160;
+  const int BRAKE_DEFAULT_TEMPERATURE = 20;
+  
+  const enum Actuator ACTUATOR_NUM = ACTUATOR_0;
+  
+  /* Common */
+  msTimer g_10msTimer;
+  int g_timerCounter = 0;
+  enum MachineState g_state = NORMAL;
+  
+  
+  /* Redundancy */
+  struct PrimaryEcu g_primaryEcu = {
+    sensor = SENSOR_0,
+    actuator = ACTUATOR_0 
+  };
+  enum CanBus g_primaryBus = BOTH;
+  
+  
+}
+
+on start {
+  setTimerCyclic(g_10msTimer, 10); 
+}
+
+on timer g_10msTimer {
+  if (g_timerCounter % RATIO_10MS) {
+    AppSchedule10ms();
+  }
+  
+  if (g_timerCounter % RATIO_20MS) {
+    AppSchedule20ms();
+  }
+  
+  if (g_timerCounter % RATIO_50MS) {
+    AppSchedule50ms();
+  }
+  
+  if (g_timerCounter % RATIO_100MS) {
+    AppSchedule100ms();
+  }
+  
+  if (g_timerCounter % RATIO_1000MS) {
+    AppSchedule1000ms();
+    g_timerCounter = 0;
+  }
+  
+  g_timerCounter++;
+}
+
+void AppSchedule10ms()
+{
+}
+
+void AppSchedule20ms()
+{
+}
+
+void AppSchedule50ms() {}
+
+void AppSchedule100ms()
+{
+}
+
+void AppSchedule1000ms() {}

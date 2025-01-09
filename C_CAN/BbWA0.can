@@ -1,0 +1,436 @@
+﻿/*@!Encoding:65001*/
+includes {
+  
+}
+
+variables {
+  /* Structs and Enums */
+  /* Common Enums */
+  enum MachineState {
+    NORMAL = 0,
+    CAUTION = 1,
+    EMERGENCY = 2
+  };
+  
+  
+  /* Redundancy */
+  enum Sensor {
+    SENSOR_0 = 0,
+    SENSOR_1 = 1
+  };
+  
+  
+  enum Actuator {
+    ACTUATOR_0 = 0,
+    ACTUATOR_1 = 1
+  };
+  
+  
+  enum CanBus {
+    BOTH = 0,
+    CAN_1 = 1,
+    CAN_2 = 2,
+    NEITHER = 3
+  };
+  
+  
+  /* ECU Messages Enums */
+  enum AbsActive {
+    ABS_INACTIVE = 0,
+    ABS_ACTIVE = 1
+  };
+  
+  
+  enum ErrorSig {
+    SIGNAL_FAIL = 0,
+    SIGNAL_SUCCESS = 1
+  };
+  
+  
+  enum ConnectionState {
+    DISCONNECTED = 0,
+    CONNECTED = 1
+  };
+  
+  
+  enum PedalState {
+    PEDAL_INACTIVE = 0,
+    PEDAL_ACTIVE = 1
+  };
+  
+  
+  enum FailInfo {
+    CAN_BUSY = 0,
+    SENSOR_ERR = 1,
+    ACTUATOR_ERR = 2
+  };
+  
+  
+  enum Bus {
+    BUS1 = 1,
+    BUS2 = 2
+  };
+  
+  
+  /* Redundancy Structs */
+  struct PrimaryEcu {
+    enum Sensor sensor;
+    enum Actuator actuator;
+  };
+  
+  
+  /* ECU Message Structs */
+  struct BbWAStatus {
+    byte isPrimary;
+    enum MachineState state;
+    int msgCount;
+    enum CanBus primaryBus;
+  };
+  
+  
+  struct BrakeCommand {
+    int activeBrakePressure;
+    enum ConnectionState sensorState;
+    enum PedalState pedalState;
+  };
+  
+  
+  struct BrakeFeedback {
+    int feedbackPressure;
+    int wheelSpeed;
+    enum AbsActive feedbackAbsActive;
+    enum ErrorSig errorSig;
+  };
+  
+  
+  struct FailStatus {
+    int failCount;
+    enum FailInfo failInfo;
+  };
+  
+  struct AbsFeedback {
+    int absPulse;
+    int brakeTemperature;
+  };
+  
+  
+  /* Constant */
+  const int RATIO_10MS    = 1;
+  const int RATIO_20MS    = 2;
+  const int RATIO_50MS    = 5;
+  const int RATIO_100MS   = 10;
+  const int RATIO_1000MS  = 100;
+  
+  const int BRAKE_PRESSURE_LOW_LIMIT = 40;
+  const int BRAKE_PRESSURE_HIGH_LIMIT = 160;
+  const int BRAKE_DEFAULT_TEMPERATURE = 20;
+  
+  const enum Actuator ACTUATOR_NUM = ACTUATOR_0;
+  
+  /* Common */
+  msTimer g_10msTimer;
+  int g_timerCounter = 0;
+  enum MachineState g_state = NORMAL;
+  
+  
+  /* Redundancy */
+  struct PrimaryEcu g_primaryEcu = {
+    sensor = SENSOR_0,
+    actuator = ACTUATOR_0 
+  };
+  enum CanBus g_primaryBus = BOTH;
+  
+  
+  /* BbWA_Status */
+  struct BbWAStatus g_bbwaStatus = {
+    isPrimary = 1,
+    state = NORMAL,
+    msgCount = 0,
+    primaryBus = BOTH
+  };
+  
+  
+  /* BrakeCommand */
+  struct BrakeCommand g_brakeCommand = {
+    activeBrakePressure = BRAKE_PRESSURE_LOW_LIMIT,
+    sensorState = CONNECTED,
+    pedalState = PEDAL_INACTIVE
+  };
+  
+  
+  /* BrakeFeedback */
+  struct BrakeFeedback g_brakeFeedback = {
+    feedbackPressure = 0,
+    wheelSpeed = 0,
+    feedbackAbsActive = ABS_INACTIVE,
+    errorSig = SIGNAL_SUCCESS
+  };
+  
+  
+  /* FailStatus */
+  struct FailStatus g_failStatus = {
+    failCount = 0,
+    failInfo = CAN_BUSY
+  };
+  
+  
+  /* AbsFeedback */
+  struct AbsFeedback g_absFeedback = {
+    absPulse = 0,
+    brakeTemperature = BRAKE_DEFAULT_TEMPERATURE
+  };
+}
+
+on start {
+  setTimerCyclic(g_10msTimer, 10);
+}
+
+on timer g_10msTimer {
+  if (g_timerCounter % RATIO_10MS) {
+    AppSchedule10ms();
+  }
+  
+  if (g_timerCounter % RATIO_20MS) {
+    AppSchedule20ms();
+  }
+  
+  if (g_timerCounter % RATIO_50MS) {
+    AppSchedule50ms();
+  }
+  
+  if (g_timerCounter % RATIO_100MS) {
+    AppSchedule100ms();
+  }
+  
+  if (g_timerCounter % RATIO_1000MS) {
+    AppSchedule1000ms();
+    g_timerCounter = 0;
+  }
+  
+  g_timerCounter++;
+}
+
+on message DriveModeStatus {
+  ModifyMachineStatus((enum MachineState)this.ModeState);
+}
+
+on message SetBrake {
+  g_primaryEcu.sensor = (enum Sensor)this.SetPrimarySensorBrake;
+  g_primaryEcu.actuator = (enum Actuator)this.SetPrimaryActuatorBrake;
+}
+
+on message CommandResetBrake {
+  if (this.HardResetBbWA0 == 1) {
+    HardReset();
+  }
+}
+
+on message CANHealthyCheck {
+  g_primaryBus = (enum CanBus)(3 - (this.CAN1Healthy * 2) - (this.CAN2Healthy));
+}
+
+on message BbWS0_Status {
+  if (g_state == EMERGENCY) {
+    return;
+  }
+  
+  if (g_primaryEcu.sensor == SENSOR_1) {
+    return;
+  }
+  
+}
+
+on message BbWS1_Status {
+  if (g_state == EMERGENCY) {
+    return;
+  }
+  
+  if (g_primaryEcu.sensor == SENSOR_0) {
+    return;
+  }
+  
+}
+
+on message BrakePedalState0 {
+  if (g_state == EMERGENCY) {
+    return;
+  }
+  
+  if (g_primaryEcu.sensor == SENSOR_1) {
+    return;
+  }
+  
+  if (this.BrakePedalActive == PEDAL_ACTIVE) {
+    ActuateBrake();
+  }
+}
+
+on message BrakePedalState1 {
+  if (g_state == EMERGENCY) {
+    return;
+  }
+  
+  if (g_primaryEcu.sensor == SENSOR_0) {
+    return;
+  }
+  
+  if (this.BrakePedalActive == PEDAL_ACTIVE) {
+    ActuateBrake();
+  }
+}
+
+on message BrakeCommand0 {
+  if (g_state == EMERGENCY) {
+    return;
+  }
+  
+  if (g_primaryEcu.sensor == SENSOR_1) {
+   return;
+  }
+  
+  g_brakeCommand.activeBrakePressure = this.ActiveBrakePressure;
+  g_brakeCommand.sensorState = (enum ConnectionState)this.BrakeConnectionState;
+  g_brakeCommand.pedalState = (enum PedalState)this.BrakePedalActive;
+}
+
+on message BrakeCommand1 {
+  if (g_state == EMERGENCY) {
+    return;
+  }
+  
+  if (g_primaryEcu.sensor == SENSOR_0) {
+   return;
+  }
+  
+}
+
+on message AbsFeedback {
+  g_absFeedback.absPulse = this.AbsPulse;
+  g_absFeedback.brakeTemperature = this.BrakeTemperature;
+}
+
+void TransmitBrakeActuatorStatus() {
+  message BbWA0_Status statusMsg;
+  statusMsg.EcuIsPrimary.phys = g_bbwaStatus.isPrimary;
+  statusMsg.BbWA_MachineState.phys = g_bbwaStatus.state;
+  statusMsg.EcuStatusMsgCount.phys = g_bbwaStatus.msgCount;
+  statusMsg.PrimaryBus.phys = g_bbwaStatus.primaryBus;
+  
+  Transmit(statusMsg);
+}
+
+void TransmitBrakeFeedback() {
+  message BrakeFeedback0 feedbackMsg;
+  feedbackMsg.BrakeErrorSig.phys = g_brakeFeedback.errorSig;
+  feedbackMsg.BrakeFeedbackABSActive.phys = g_brakeFeedback.feedbackAbsActive;
+  feedbackMsg.BrakeFeedbackPressure.phys = g_brakeFeedback.feedbackPressure;
+  feedbackMsg.WheelSpeed.phys = g_brakeFeedback.wheelSpeed;
+  
+  Transmit(feedbackMsg);
+}
+
+void TransmitBrakeFailStatus() {
+  message BrakeActuator1FailStatus failStatus;
+  failStatus.BbWA_FailCount.phys = g_failStatus.failCount;
+  failStatus.BbWA_FailInfo.phys = g_failStatus.failInfo;
+  
+  Transmit(failStatus);
+}
+
+void TransmitWheelSpeed() {
+  message WheelStatus0 wheelStatus;
+  wheelStatus.WheelSpeed.phys = g_brakeFeedback.wheelSpeed;
+  
+  Transmit(wheelStatus);
+}
+
+void AppSchedule10ms()
+{
+  TransmitBrakeActuatorStatus();
+}
+
+void AppSchedule20ms()
+{
+  TransmitBrakeFeedback();
+  TransmitBrakeFailStatus();
+}
+
+void AppSchedule50ms() {}
+
+void AppSchedule100ms()
+{
+  TransmitWheelSpeed();
+}
+
+void AppSchedule1000ms() {}
+
+void ModifyMachineStatus(enum MachineState state) {
+  g_state = state;
+  
+  g_brakeCommand.activeBrakePressure = BRAKE_PRESSURE_HIGH_LIMIT;
+  g_brakeCommand.pedalState = PEDAL_ACTIVE;
+  ActuateBrake();
+}
+
+void Transmit(message * msg) {
+  switch (g_bbwaStatus.primaryBus) {
+    case BOTH:
+      msg.can = BUS1;
+      output(msg);
+      msg.can = BUS2;
+      output(msg);
+      return;
+    case CAN_1:
+      msg.can = BUS1;
+      break;
+    case CAN_2:
+      msg.can = BUS2;
+      break;
+    default:
+      return;
+  }
+  
+  output(msg);
+}
+
+void HardReset() {
+  /* Common */
+  g_timerCounter = 0;
+  
+  
+  /* Redundancy */
+  g_primaryEcu.sensor = SENSOR_0;
+  g_primaryEcu.actuator = ACTUATOR_0;
+  g_primaryBus = BOTH;
+  
+  
+  /* BbWA_Status */
+  g_bbwaStatus.isPrimary = 1;
+  g_bbwaStatus.state = NORMAL;
+  g_bbwaStatus.msgCount = 0;
+  g_bbwaStatus.primaryBus = BOTH;
+  
+  
+  /* BrakeFeedback */
+  g_brakeFeedback.feedbackPressure = 0;
+  g_brakeFeedback.wheelSpeed = 0;
+  g_brakeFeedback.feedbackAbsActive = ABS_INACTIVE;
+  g_brakeFeedback.errorSig = SIGNAL_SUCCESS;
+  
+  
+  /* FailStatus */
+  g_failStatus.failCount = 0;
+  g_failStatus.failInfo = CAN_BUSY;
+  
+  
+  //todo!: sleep 3s
+}
+
+void ActuateBrake() {
+  if (ACTUATOR_NUM != g_primaryEcu.actuator) {
+    return;
+  }
+  
+  //todo!: involving ABS while braking
+  //todo!: modify and calculate wheel speed
+}
