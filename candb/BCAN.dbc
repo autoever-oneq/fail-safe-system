@@ -36,10 +36,28 @@ BS_:
 BU_: HVAC TPMS CLU BCM VCU
 
 
-BO_ 768 DriveMode: 1 VCU
+BO_ 768 StartUp: 1 VCU
+ SG_ StartUpSignal : 0|1@1+ (1,0) [0|1] ""  BCM,CLU,HVAC,TPMS
+
+BO_ 790 CautionTurnInput: 1 CLU
+ SG_ CautionTurnSignal : 0|1@1+ (1,0) [0|1] ""  VCU
+
+BO_ 789 RightTurnInput: 1 CLU
+ SG_ RightTurnInputSignal : 0|1@1+ (1,0) [0|1] ""  VCU
+
+BO_ 788 LeftTurnInput: 1 CLU
+ SG_ LeftTurnInputSignal : 0|1@1+ (1,0) [0|1] ""  VCU
+
+BO_ 784 IgnitionOn: 1 CLU
+ SG_ IgnitionFlag : 0|1@1+ (1,0) [0|1] ""  VCU
+
+BO_ 776 BrakeInputFlag: 1 VCU
+ SG_ BrakeInputFlag : 0|1@1+ (1,0) [0|1] "Flag"  BCM
+
+BO_ 770 DriveMode: 1 VCU
  SG_ DriveMode : 0|2@1+ (1,0) [0|2] ""  BCM
 
-BO_ 769 GearInput: 1 BCM
+BO_ 816 GearInput: 1 BCM
  SG_ GearInput : 0|2@1+ (1,0) [0|3] ""  CLU,VCU
 
 BO_ 787 ADSOperation: 1 CLU
@@ -77,7 +95,7 @@ BO_ 775 FrmPCAN_CLU_1000ms: 3 VCU
 BO_ 771 FrmVCU_CLU_100ms: 1 VCU
  SG_ CurVelocity : 0|8@1+ (1,0) [0|250] "km/h"  CLU
 
-BO_ 770 TirePressureAlert: 1 VCU
+BO_ 800 TirePressureAlert: 1 TPMS
  SG_ TireAlertFlag : 0|1@1+ (1,0) [0|1] "Flag"  CLU
 
 BO_ 785 RegBrake_level: 1 CLU
@@ -101,7 +119,7 @@ BO_ 804 TireStateRR: 3 TPMS
 
 BO_ 803 TireStateRL: 3 TPMS
  SG_ WheelRLTemp : 16|7@1- (1,30) [-30|85] "celcius degree"  VCU,CLU
- SG_ WheelRLPressusre : 0|10@1+ (1,0) [0|600] "bar"  VCU,CLU
+ SG_ WheelRLPressure : 0|10@1+ (1,0) [0|600] "bar"  VCU,CLU
 
 BO_ 802 TireStateFR: 3 TPMS
  SG_ WheelFRTemp : 16|7@1- (1,30) [-30|85] "celcius degree"  VCU,CLU
