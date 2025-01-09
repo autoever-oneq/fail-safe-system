@@ -1,4 +1,4 @@
-﻿/*@!Encoding:65001*/
+/*@!Encoding:65001*/
 includes
 {
   
@@ -6,66 +6,77 @@ includes
 
 variables
 {
-  msTimer counter_10ms;
-  int cnt;
+  msTimer message_timer_10ms; // 주기 메시지를 위한 타이머
+  int timer_cnt = 0;          // 타이머 카운터
   
-  const int battery_capacity = 100;
+  const int battery_capacity = 100; // 배터리 최대 용량
+  const int energy_efficiency = 5;  // 전비
   
-  int battery_volt;
-  int battery_soh;
-  int battery_soc;
-  int battery_temp;
+  int battery_volt;       // 배터리 전압 (0 ~ 1000)
+  int battery_soh;        // 배터리 잔존 수명 (0 ~ 100)
+  int battery_soc;        // 배터리 충전량 (0 ~ 100)
+  int battery_temp;       // 배터리 온도 (-50 ~ 150)
   
-  char bmu_alive_flag;
+  char bmu_alive_flag;    // ECU 정상 상태 flag (0, 1)
   
-  char battery_hvac;
-  char mode_status;
-  char output_limit;
+  char battery_hvac;      // 배터리 냉각 & 히터 시스템 flag (0 : 작동 x, 1 : 냉각 on, 2 : 히터 on)
+  char mode_status;       // 주행 상태 flag (0 : 일반, 1 : 주의, 2 : 긴급)
+  char output_limit;      // 배터리 상태(온도, SOC)에 따른 MCU 출력 제한 flag (0 : 평시 상태, 1 : 출력 제한 상태)
 }
 
 /* Initialize */
 on preStart
 {
-  setTimerCyclic(counter_10ms, 10);
+  
 }
 
 on start
 {
-
+  setTimerCyclic(message_timer_10ms, 10);
 }
-
 
 /* BMU(Tx) -> VCU(Rx) */
-on timer counter_10ms
+void output_30ms()
 {
-  ++cnt;
-  if(cnt % 3 == 0)
-  {
-    message BatteryMonitoring1 msg;
-    msg.Battery_SOC = battery_soc;
-    output(msg);
-  }
-  if(cnt % 5 == 0)
-  {
-    message BatteryMonitoring0 msg;
-    msg.Battery_Volt = battery_volt;
-    msg.Battery_SOH = battery_soh;
-    msg.Battery_Temp = battery_temp;
-    msg.Output_Limit = output_limit;
-    output(msg);
-  }
-  if(cnt % 20 == 0)
-  {
-    message RemainingRangeCal msg;
-    int remain_range;
-    
-    remain_range = battery_capacity * battery_soc * 5 / 100;
-    msg.Remain_Range = remain_range;
-    
-    output(msg);
-  }
+  // 0x211
+  message BatteryMonitoring1 msg;
+  
+  msg.Battery_SOC = battery_soc;
+  
+  output(msg);
+}
+void output_50ms()
+{
+  // 0x236
+  message BatteryMonitoring0 msg;
+  
+  msg.Battery_Volt = battery_volt;
+  msg.Battery_SOH = battery_soh;
+  msg.Battery_Temp = battery_temp;
+  msg.Output_Limit = output_limit;
+  
+  output(msg);
+}
+void output_200ms()
+{
+  // 0x272
+  message RemainingRangeCal msg;
+  int remain_range;
+  
+  remain_range = battery_capacity * battery_soc * 5 / 100;
+  msg.Remain_Range = remain_range;
+  
+  output(msg);
 }
 
+// Tx Cyclic message
+on timer message_timer_10ms
+{
+  ++timer_cnt;
+  if(timer_cnt % 3 == 0) {output_30ms();}
+  if(timer_cnt % 5 == 0) {output_50ms();}
+  if(timer_cnt % 20 == 0) {output_200ms();}
+}
 
 /* VCU(Tx) -> BMU(Rx) */
 // 0x271
@@ -74,12 +85,21 @@ on message BatterySocUpdate
   battery_soc += $BatterySocUpdate::Battery_Soc_Change;
 }
 
+// 0x256
+on message BatteryTempUpdate
+{
+  battery_hvac = $BatteryTempUpdate::Battery_HVAC;
+}
+
 // 0x251
 on message PcanHealthyCheck
 {
-  message BMUAlive alive;
-  alive.BMU_Alive_Flag = 1;
-  output(alive);
+  if(mode_status != 2)      // Not emergency
+  {
+    message BMUAlive alive;
+    alive.BMU_Alive_Flag = 1;
+    output(alive);
+  }
 }
 
 // 0x201
@@ -88,7 +108,7 @@ on message PcanModeStatus
   mode_status = $PcanModeStatus::Mode_Status;
   
   // 시스템 쿨러 작동?
-  /* if(Mode_Status) */
+  /* if(mode_Status) {statement} */
 }
 
 /* End */
