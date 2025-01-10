@@ -14,7 +14,7 @@ variables
   byte ecuisPrimary=0;
   byte SbWS_Machinstate =0;
   word ecuStatusMsgCnt =0;
-  byte primaryBus =0;
+  byte primaryBus =1;
   byte SbWS_FailCount;
   byte SbWS_FailInfo;
   

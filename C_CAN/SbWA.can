@@ -15,7 +15,7 @@ variables
   byte ecuisPrimary=1;
   byte SbWS_Machinstate =0;
   word ecuStatusMsgCnt =0;
-  byte primaryBus =0;
+  byte primaryBus =1;
   byte is_off =0 ;
   
   

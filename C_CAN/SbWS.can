@@ -64,7 +64,7 @@ on timer Reset_T{
   ecuisPrimary =0;
   SbWS_Machinstate =0;
   ecuStatusMsgCnt =0;
-  primaryBus =0;
+  primaryBus =1;
   SbWS_FailCount=0;
   SbWS_FailInfo=0;
 }
