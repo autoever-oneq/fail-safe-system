@@ -29,6 +29,8 @@ on prestart{
 }
 on start
 {
+  Ignition_Status = 1;
+  sendMsg_IgnitionOn(); // 시작시 시동
   sendMsg_RegBrake_level(RegBrakeLevel);
   setTimerCyclic(loop,100);
 }

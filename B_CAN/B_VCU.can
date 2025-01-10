@@ -53,7 +53,7 @@ on prestart{
   @sysvar::BODY::LEFTTURNON = 0;
   @sysvar::BODY::RIGHTTURNON = 0;
   @sysvar::BODY::TIREALERT = 0;
-  @sysvar::DRIVEMODE = 0;
+  @sysvar::DRIVEMODE = GENERAL_MODE;
 }
 on start
 {
@@ -68,20 +68,22 @@ on timer loop
   {
     // 0x201
     mode_status = EMERGENCY_MODE;
-    //@sysvar::DRIVEMODE = mode_status;
-    //sendMsg_BroadcastDriveMode(mode_status);
-    sendMsg_PcanModeStatus_func(mode_status);
+    @sysvar::DRIVEMODE = EMERGENCY_MODE;
   }
 
   Timer_10ms ++;
   TimeScheduling10ms(); 
   if (Timer_10ms % 2 == 0){
     TimeScheduling20ms();
+  }
     if(Timer_10ms % 5 == 0){
       TimeScheduling50ms();
       if (Timer_10ms % 10 == 0){
         Timer_100ms++;
         TimeScheduling100ms();
+        if (Timer_100ms % 2 == 0){
+          TimeScheduling200ms();
+        }
         if (Timer_100ms % 5 == 0){
           TimeScheduling500ms();
           if (Timer_100ms % 10 == 0){
@@ -96,12 +98,12 @@ on timer loop
           }
         }
       }
-    }
-  }  
+    } 
 }
 
 
 void TimeScheduling10ms(){
+  
 }
 
 void TimeScheduling20ms(){
@@ -138,6 +140,9 @@ void TimeScheduling100ms(){
   /*-----BCAN--------*/
 }
 
+ void TimeScheduling200ms(){
+ }
+
 void TimeScheduling500ms(){
   /*-----BCAN--------*/
   sendMsg_FrmPCAN_CLU_500ms();
@@ -163,7 +168,8 @@ on sysvar_update BODY::BRAKEINPUT
 }
 
 on sysvar_update DRIVEMODE{
-  sendMsg_BroadcastDriveMode(@sysvar::DRIVEMODE);
+  sendMsg_DriveMode(@sysvar::DRIVEMODE);
+  sendMsg_PcanModeStatus_func(@sysvar::DRIVEMODE);
 }
 
 
@@ -199,6 +205,12 @@ on message TirePressureAlert{
 }
 /*----------------------------BCAN Events----------------------------*/
 /*----------------------------PCAN Events----------------------------*/
+on message Pcan::BMUAlive
+{
+  alive_flag |= (this.BMU_Alive_Flag) << 0; // 0번째 비트 : BMU
+  alive_check();
+}
+
 on message Pcan::BatteryMonitoring0
 {
   battery_volt = this.Battery_Volt.phys;
@@ -211,12 +223,13 @@ on message Pcan::BatteryMonitoring0
     if(battery_soc <= 100)
     {
       mode_status = EMERGENCY_MODE;
-      sendMsg_PcanModeStatus_func(EMERGENCY_MODE);
+      @sysvar::DRIVEMODE = EMERGENCY_MODE;
     }
     else if(battery_temp <= 15 || battery_temp >= 45 || battery_soc <= 1000)
     {
       if(mode_status == GENERAL_MODE)
-        sendMsg_PcanModeStatus_func(CAUTION_MODE);
+        //sendMsg_PcanModeStatus_func(CAUTION_MODE);
+      @sysvar::DRIVEMODE = CAUTION_MODE;
       output_limit = 1;
       mode_status = CAUTION_MODE;
     }
@@ -321,9 +334,9 @@ void sendMsg_FrmVCU_CLU_100ms()
 void sendMsg_FrmPCAN_CLU_500ms()
 {
   message FrmPCAN_CLU_500ms msg;
-  msg.Regen_Brake_Status.phys = 0;
+  msg.Regen_Brake_Status.phys = (brake_status == 2) ? 0 : 1;
   msg.Battery_Output_Limit.phys = output_limit;
-  msg.BatterySOC.phys = battery_soc;
+  msg.BatterySOC.phys = battery_soc / 100;
   msg.BatteryTemp.phys = battery_temp;
   if(StartUpFlag == 1) output(msg); 
 }
@@ -335,9 +348,9 @@ void sendMsg_StartUp(int ButtonState){
   output(msg);
 }
 
-void sendMsg_DriveMode(){
+void sendMsg_DriveMode(int STATUS){
   message DriveMode msg;
-  msg.DriveMode.phys = 0;
+  msg.DriveMode.phys = STATUS;
   output(msg); 
 }
 
@@ -475,6 +488,6 @@ void sendMsg_MCURpmLimit_func(void)
 
 void sendMsg_BroadcastDriveMode(int ModeStatus){
   mode_status = @sysvar::DRIVEMODE;
-  //sendMsg_DriveMode();
+  sendMsg_DriveMode(mode_status);
   sendMsg_PcanModeStatus_func(mode_status);
 }
