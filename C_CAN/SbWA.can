@@ -15,7 +15,7 @@ variables
   byte ecuisPrimary=1;
   byte SbWS_Machinstate =0;
   word ecuStatusMsgCnt =0;
-  byte primaryBus =1;
+  byte primaryBus =5;
   byte is_off =0 ;
   
   
@@ -29,12 +29,12 @@ variables
   int wheelSpeed=0;
   
   // Self Data
-  int steerFeedbackAngle;
+  float steerFeedbackAngle;
   
   
   // Actuator info
   byte PrimaryAct; // 0 or 1
-  int SteerFeedback;
+  float SteerFeedback;
   
   
   byte error=0;
