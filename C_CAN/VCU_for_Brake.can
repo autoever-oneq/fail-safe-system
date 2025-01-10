@@ -1,0 +1,175 @@
+﻿/*@!Encoding:65001*/
+includes
+{
+  
+}
+
+variables
+{
+  /* Structs and Enums */
+  /* Common Enums */
+  enum MachineState {
+    NORMAL = 0,
+    CAUTION = 1,
+    EMERGENCY = 2
+  };
+  
+  
+  /* Redundancy */
+  enum Sensor {
+    SENSOR_0 = 0,
+    SENSOR_1 = 1
+  };
+  
+  
+  enum Actuator {
+    ACTUATOR_0 = 0,
+    ACTUATOR_1 = 1
+  };
+  
+  
+  enum CanBus {
+    BOTH = 0,
+    CAN_1 = 1,
+    CAN_2 = 2,
+    NEITHER = 3
+  };
+  
+  
+  /* Redundancy Struct */
+  struct PrimaryEcu {
+    enum Sensor sensor;
+    enum Actuator actuator;
+  };
+  
+  struct EcuStatus {
+    enum MachineState machineState;
+    int failCount;
+    double timestampLastAliveMsg;
+  };
+  
+  struct CanStatus {
+    enum CanBus canAlive;
+    int can1LastMsgId;
+    int can2LastMsgId;
+    int errCount;
+  };
+  
+  
+  /* Constant */
+  const int RATIO_10MS    = 1;
+  const int RATIO_20MS    = 2;
+  const int RATIO_50MS    = 5;
+  const int RATIO_100MS   = 10;
+  const int RATIO_1000MS  = 100;
+  
+  
+  /* Common */
+  msTimer g_10msTimer;
+  int g_timerCounter = 0;
+  enum MachineState g_state = NORMAL;
+  
+  
+  /* Redundancy */
+  struct PrimaryEcu g_primaryBrakeEcu = {
+    sensor = SENSOR_0,
+    actuator = ACTUATOR_0 
+  };
+  
+  struct EcuStatus g_brakeSensorStatus[enum Sensor];
+  struct EcuStatus g_brakeActuatorS[enum Actuator];
+  
+  
+  struct CanStatus g_ccanStatus = {
+    canAlive = BOTH,
+    can1LastMsgId = 0x00,
+    can2LastMsgId = 0x00,
+    errCount = 0
+  };
+}
+
+on start {
+  setTimerCyclic(g_10msTimer, 10);
+}
+
+on timer g_10msTimer {
+  if (g_timerCounter % RATIO_10MS) {
+    AppSchedule10ms();
+  }
+  
+  if (g_timerCounter % RATIO_20MS) {
+    AppSchedule20ms();
+  }
+  
+  if (g_timerCounter % RATIO_50MS) {
+    AppSchedule50ms();
+  }
+  
+  if (g_timerCounter % RATIO_100MS) {
+    AppSchedule100ms();
+  }
+  
+  if (g_timerCounter % RATIO_1000MS) {
+    AppSchedule1000ms();
+    g_timerCounter = 0;
+  }
+  
+  g_timerCounter++;
+}
+
+on message CCAN1.* {
+  // CAN Integrity Check when both CAN alive
+  if (g_ccanStatus.canAlive == BOTH) {
+    CheckCanIntegrity(5, this.id);
+  }
+}
+
+on message CCAN2.* {
+  // CAN Integrity Check when both CAN alive
+  if (g_ccanStatus.canAlive == BOTH) {
+    CheckCanIntegrity(5, this.id);
+  }
+}
+
+void CheckCanIntegrity(int canNumber, int msgId) {
+  if (canNumber == 5) {
+    g_ccanStatus.can1LastMsgId = msgId;
+  }
+  else {
+    g_ccanStatus.can2LastMsgId = msgId;
+  }
+  
+  if (g_ccanStatus.can1LastMsgId != g_ccanStatus.can2LastMsgId) {
+    g_ccanStatus.errCount++;
+    if (g_ccanStatus.errCount >= 2) {
+      if (canNumber == 5) {
+        write("[!] CAN2 Integrity Failed!");
+        g_ccanStatus.canAlive = CAN_1;
+      }
+      else {
+        write("[!] CAN1 Integrity Failed!");
+        g_ccanStatus.canAlive = CAN_2;
+      }
+    }
+  }
+  else {
+    g_ccanStatus.errCount = 0;
+  }
+}
+
+void AppSchedule10ms() {
+  
+}
+
+void AppSchedule20ms() {
+  
+}
+
+void AppSchedule50ms() {}
+
+void AppSchedule100ms() {
+  
+}
+
+void AppSchedule1000ms() {}
+
