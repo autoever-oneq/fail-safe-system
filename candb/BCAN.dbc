@@ -61,7 +61,7 @@ BO_ 816 GearInput: 1 BCM
  SG_ GearInput : 0|2@1+ (1,0) [0|3] ""  CLU,VCU
 
 BO_ 787 ADSOperation: 1 CLU
- SG_ ADCOperation : 0|2@1+ (1,0) [0|2] ""  HVAC
+ SG_ ADSOperation : 0|2@1+ (1,0) [0|2] ""  HVAC
 
 BO_ 786 HVACControl: 2 CLU
  SG_ HVACTemp : 10|5@1+ (1,18) [18|32] ""  HVAC
