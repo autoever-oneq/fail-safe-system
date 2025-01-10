@@ -6,6 +6,7 @@ includes
 
 variables
 {
+    msTimer loop;
     int RegBrakeLevel = 0;
     int Ignition_Status = 0;
     int StartUpFlag = 0;
@@ -23,6 +24,12 @@ variables
 on start
 {
   sendMsg_RegBrake_level(RegBrakeLevel);
+  setTimerCyclic(loop,100);
+}
+
+on timer loop{
+  sendMsg_HVACControl();
+  sendMsg_ADSOperation();
 }
 
 
@@ -113,4 +120,20 @@ void sendMsg_IgnitionOn() {
   message IgnitionOn msg;
   msg.IgnitionFlag.phys = Ignition_Status;
   output(msg);
+}
+
+void sendMsg_HVACControl(){
+  message HVACControl msg;
+  msg.HVACOperation.phys = 0;
+  msg.HVACHeatCool.phys = 0;
+  msg.HVACTemp.phys = 18;
+  msg.HVACStrength.phys = 2;
+  msg.HVACMode.phys = 0;
+  if(StartUpFlag == 1) output(msg);
+}
+
+void sendMsg_ADSOperation(){
+  message ADSOperation msg;
+  msg.ADSOperation = 0;
+  if(StartUpFlag == 1) output(msg);
 }

@@ -86,7 +86,7 @@ BO_ 817 FLTurnVoltCurrent: 1 BCM
  SG_ FLVolt : 5|3@1+ (1,0) [0|5] "V"  VCU
  SG_ FLCurrent : 0|5@1+ (1,0) [0|30] "mA"  VCU
 
-BO_ 775 FrmPCAN_CLU_1000ms: 3 VCU
+BO_ 775 FrmPCAN_CLU_500ms: 3 VCU
  SG_ BatteryTemp : 16|8@1- (1,90) [-50|150] ""  CLU
  SG_ BatterySOC : 8|7@1+ (1,0) [0|100] "percent"  CLU
  SG_ Battery_Output_Limit : 1|1@1+ (1,0) [0|1] "Flag"  CLU

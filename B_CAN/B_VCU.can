@@ -5,6 +5,7 @@ includes
 variables
 {
   msTimer loop;
+  int Timer_500ms = 0;
   int Timer_1000ms = 0;
   int Timer_10s = 0;
   int StartUpFlag = 0;
@@ -21,7 +22,12 @@ on start
 on timer loop
 {
   TimeScheduling100ms();
+  Timer_500ms ++;
   Timer_1000ms ++;
+  if (Timer_500ms % 5 == 0){
+    Timer_500ms = 0;
+    TimeScheduling500ms();
+  }
   if (Timer_1000ms % 10 == 0) {
     Timer_1000ms = 0;
     Timer_10s ++;
@@ -36,8 +42,10 @@ on timer loop
 void TimeScheduling100ms(){
   sendMsg_FrmVCU_CLU_100ms();
 }
+void TimeScheduling500ms(){
+  sendMsg_FrmPCAN_CLU_500ms();
+}
 void TimeScheduling1sec(){
-  sendMsg_FrmPCAN_CLU_1000ms();
 }
 void TimeScheduling10sec(){
 }
@@ -109,9 +117,9 @@ void sendMsg_FrmVCU_CLU_100ms()
   if(StartUpFlag == 1) output(msg); 
 }
 
-void sendMsg_FrmPCAN_CLU_1000ms()
+void sendMsg_FrmPCAN_CLU_500ms()
 {
-  message FrmPCAN_CLU_1000ms msg;
+  message FrmPCAN_CLU_500ms msg;
   msg.Regen_Brake_Status.phys = 0;
   msg.Battery_Output_Limit.phys = 0;
   msg.BatterySOC.phys = 100;
@@ -125,6 +133,7 @@ void sendMsg_StartUp(int ButtonState){
   msg.StartUpSignal.phys = ButtonState;
   output(msg);
 }
+
 
 
 
