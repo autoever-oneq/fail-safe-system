@@ -15,9 +15,9 @@ variables
 on start
 {
   setTimerCyclic(loop, 100);
-  @sysvar::HW::LEFTTURNON = 0;
-  @sysvar::HW::RIGHTTURNON = 0;
-  @sysvar::HW::TIREALERT = 0;
+  @sysvar::BODY::LEFTTURNON = 0;
+  @sysvar::BODY::RIGHTTURNON = 0;
+  @sysvar::BODY::TIREALERT = 0;
 }
 
 
@@ -54,9 +54,9 @@ void TimeScheduling10sec(){
 
 
 
-on sysvar_update INPUT::BRAKEINPUT
+on sysvar_update BODY::BRAKEINPUT
 {
-  sendMsg_BrakeInputFlag(@sysvar::INPUT::BRAKEINPUT);  
+  sendMsg_BrakeInputFlag(@sysvar::BODY::BRAKEINPUT);  
 }
 
 on message CautionTurnInput
