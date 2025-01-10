@@ -6,92 +6,203 @@ includes
 
 variables
 {
-  msTimer motorrpmmonitoring_timer;
+  enum mode{
+    NORMAL = 0,
+    CAUTION,
+    EMERGENCY
+  };
   
-  int motor_rpm = 0;
-  char mcu_alive_flag = 0;
-  int output_limit = 0;
-  int accel_pedal_position = 0;
-  char accel_pedal_position_flag = 0;
-  int mode_status = 0;
-  int regen_motor_rpm = 0;
-  char pcan_healty_check = 0;
+  msTimer counter_10ms;
+  int cnt = 0;
   
-  int delta_rpm = 0; // 10초내로 모터 감소시킬 양
+  const int MAX_RPM = 11000;   // max
+  int max_rpm_increase = 300;  // 증가할 양
+  int mechanical_brake_rpm = 20; // 기계식 브레이크
+  int natural_decel = 10;
+  
+  int motor_rpm = 0;           // 현재 motor RPM
+  int output_limit = 0;        // 출력 제한
+  int limit_motor_rpm = MAX_RPM;
+  
+  char mcu_alive_flag = 0; 
+  
+  int mode_status = NORMAL;     
+  int delta_rpm_emergency = 0;  
+  int regen_motor_rpm = 0;      // 회생제동 임시 변화량
+  char pcan_healty_check = 0;   // PCAN ECU 고장 확인
+  
+  int accel_pedal_position = 0; // 페달 누르는 정도
+  char accel_pedal_active = 0;  // 엑셀페달 밟았는지
+  char brake_pedal_active = 0;  // 브레이크 페달 밟았는지
+  
+  int delta_rpm = 0; // 임시 변화량
+}
+
+void RPMtoVCU(void)
+{
+  message PCAN::MotorRpmMonitoring msg; // 모니터링
+  
+  msg.Motor_RPM = motor_rpm;
+  
+  output(msg);
 }
 
 on start
 {
-  cancelTimer(motorrpmmonitoring_timer);
-  setTimerCyclic(motorrpmmonitoring_timer, 30);
+  cancelTimer(counter_10ms);
+  setTimerCyclic(counter_10ms, 10);
 }
 
-on timer motorrpmmonitoring_timer // VCU에 RPM 보내기, 긴급모드에도 보내기
+on timer counter_10ms // VCU에 RPM 보내기, 긴급모드에도 보내기
 { 
-  message PCAN::MotorRpmMonitoring msg;
-  if(mode_status == 2) // 모터 속도 10초 내로 휠 RPM 0으로 만들기(rpm)
-  {
-    motor_rpm -= delta_rpm;
-    if(motor_rpm < 0) msg.Motor_RPM = 0;
-    else msg.Motor_RPM = motor_rpm;
+  
+  RPMcal(); // 10ms RPM 계산
+  
+  ++cnt;
+  if(cnt % 3 == 0) { // 30ms 주기
+    RPMtoVCU(); 
   }
-  else
-  {
-    msg.Motor_RPM = motor_rpm;    
-  }
-  output(msg);
+  
 }
 
-on message PCAN::BatteryMonitoring0 // 모터 출력 제한
+/*
+  모드 (이벤트)
+- 일반 -> 긴급
+- 일반 <-> 주의
+*/
+on message PCAN::PcanModeStatus
 {
-  if(mode_status != 2) // 긴급모드가 아니라면
+  if(mode_status != EMERGENCY){
+    mode_status = this.Mode_Status.phys;
+  }
+  
+  if(mode_status == EMERGENCY){ 
+    // 10초를 30ms로 나누면 33번정도(990ms)
+    delta_rpm_emergency = motor_rpm / 33;
+  }
+  
+}
+
+// VCU에서 받은 RPM 업데이트
+on message PCAN::MotorRpmUpdate 
+{
+  if(mode_status != EMERGENCY) // 긴급모드가 아니라면
   {
-    output_limit = $PCAN::BatteryMonitoring0::Output_Limit;
-    if(output_limit == 1) // 출력 제한 70%
+    delta_rpm = this.Motor_RPM.phys;
+  }
+}
+
+// 회생제동으로 감소시킬 모터RPM 량
+on message PCAN::RegenToMcu
+{
+  if(mode_status != EMERGENCY)
+  {
+    regen_motor_rpm = this.Regen_Motor_RPM.phys; 
+  }
+}
+
+// MCU 살아있는지
+on message PCAN::PcanHealthyCheck
+{
+  if(mode_status != EMERGENCY) // 긴급모드가 아니라면
+  {
+    message MCUAlive msg;
+    msg.MCU_Alive_Flag = 1;
+    output(msg);
+  }
+}
+
+// 주의 모드 -> 모터 출력 제한
+on message PCAN::MCURpmLimit
+{
+  if(mode_status != EMERGENCY)        // 긴급모드가 아니라면
+  {
+    output_limit = this.Output_Limit.phys;
+    
+    if(output_limit == 1)             // 주의모드 출력 제한 : MAX_RPM *0.7
     {
-      motor_rpm = (int)(motor_rpm * 0.7);
+     limit_motor_rpm = MAX_RPM * 0.7;
+    }else {
+     limit_motor_rpm = MAX_RPM;
     }
   }
 }
 
-on message PCAN::AccelPedalState // 엑셀페달 밟은 정도에 따른 RPM 증가
+// 브레이크 밟았을 때
+on message PCAN::BasicBrakeReq
 {
-  if(mode_status != 2) // 긴급모드가 아니라면
+  if(mode_status != EMERGENCY) // 긴급모드가 아니라면
   {
-    accel_pedal_position = $PCAN::AccelPedalState::Accel_Pedal_Position;
-    accel_pedal_position_flag = $PCAN::AccelPedalState::Accel_Pedal_Position_Flag;
+    brake_pedal_active = this.Brake_Pedal_Active.phys;
+  }
+}
+
+// 엑셀페달 밟을 때
+on message PCAN::AccelPedalState 
+{
     
-    motor_rpm += accel_pedal_position;
-  }
-}
-
-on message MotorRpmUpdate // VCU에서 받은 RPM 업데이트
-{
-  if(mode_status != 2) // 긴급모드가 아니라면
+  if(mode_status != EMERGENCY) // 긴급모드가 아니라면
   {
-  motor_rpm = $PCAN::MotorRpmUpdate::Motor_RPM; // RPM량 바로 투입??
+    accel_pedal_position = this.Accel_Pedal_Position.phys;
+    accel_pedal_active = this.Accel_Pedal_Position_Flag.phys;
   }
+  
 }
 
-on message RegenToMcu
-{
-  if(mode_status != 2) // 긴급모드가 아니라면
+/*
+- brake_pedal_active
+- accel_pedal_active + accel_pedal_position
+- 회생제동 : regen_motor_rpm
+
+*/
+
+void RPMcal(){
+  
+  if(mode_status == EMERGENCY) // 긴급 모드 : 10초내에 속도 멈춤
   {
-    motor_rpm -= $PCAN::RegenToMcu::Regen_Motor_RPM;
+     motor_rpm -= delta_rpm_emergency;
+  } 
+  else if (motor_rpm > limit_motor_rpm) // 주의 모드 출력 제한 
+  {
+    motor_rpm -= 8;
   }
-}
-
-on message PCAN::PcanModeStatus
-{
-  if($PCAN::PcanModeStatus::Mode_Status == 2){ // 긴급인 경우 ==> 모터 속도 10초 내로 휠 RPM 0으로 만들기(rpm)
-    // rpm 33번으로 나눈 값 저장 -> MotorRpmMonitoring에서 뺀 값 보낼거임
-    delta_rpm = (int)(motor_rpm / 33);
+  else 
+  { 
+  
+    if(accel_pedal_active == 1 && brake_pedal_active == 0) // accel : 1, brake : 0
+    {
+      
+      // 액셀 누른만큼 증가
+      /*
+      int rpm_increase;
+      rpm_increase = accel_pedal_position * max_rpm_increase * 0.002;
+      motor_rpm += rpm_increase;
+      */
+      motor_rpm += delta_rpm;
+      
+    }
+    else if (accel_pedal_active == 0 && brake_pedal_active == 1) // accel : 0, brake : 1 
+    {
+      // 일반 브레이크 + 회생제동 
+      motor_rpm -= ( regen_motor_rpm );
+    }
+    else if (accel_pedal_active == 0 && brake_pedal_active == 0) // accel : 0, brake : 0 -> 자연 감속 + 회생제동 
+    {
+    
+      motor_rpm -= ( regen_motor_rpm + natural_decel);
+    }
+    else // accel : 1, brake : 1 -> brake 우선 순위
+    {
+      motor_rpm -= regen_motor_rpm;
+    }
+       
   }
-}
-
-on message PcanHealthyCheck
-{
-  message MCUAlive msg;
-  msg.MCU_Alive_Flag = 1;
-  output(msg);
+  
+  if(motor_rpm >= limit_motor_rpm) 
+    motor_rpm = limit_motor_rpm;
+  
+  // 음수 방지
+  if(motor_rpm < 0) 
+    motor_rpm = 0;
+  
 }

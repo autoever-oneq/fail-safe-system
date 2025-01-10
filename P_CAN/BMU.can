@@ -1,4 +1,5 @@
-/*@!Encoding:65001*/
+﻿/*@!Encoding:65001*/
+
 includes
 {
   
@@ -17,17 +18,35 @@ variables
   int battery_soc;        // 배터리 충전량 (0 ~ 100)
   int battery_temp;       // 배터리 온도 (-50 ~ 150)
   
-  char bmu_alive_flag;    // ECU 정상 상태 flag (0, 1)
+  // ECU 정상 상태 flag (0, 1)
+  enum Bmu_Alive_Flag {BAD, OK};
+  enum Bmu_Alive_Flag bmu_alive_flag;
   
-  char battery_hvac;      // 배터리 냉각 & 히터 시스템 flag (0 : 작동 x, 1 : 냉각 on, 2 : 히터 on)
-  char mode_status;       // 주행 상태 flag (0 : 일반, 1 : 주의, 2 : 긴급)
-  char output_limit;      // 배터리 상태(온도, SOC)에 따른 MCU 출력 제한 flag (0 : 평시 상태, 1 : 출력 제한 상태)
+  // 배터리 냉각 & 히터 시스템 flag (0 : 작동 x, 1 : 냉각 on, 2 : 히터 on)
+  enum Battery_Hvac {NONE, COOLING, HEATING};
+  enum Battery_Hvac battery_hvac;
+  
+  // 주행 상태 flag (0 : 일반, 1 : 주의, 2 : 긴급)
+  enum Mode_Status {NORMAL, WARNING, EMERGENCY};
+  enum Mode_Status mode_status;
+  
+  // 배터리 상태(온도, SOC)에 따른 MCU 출력 제한 flag (0 : 평시 상태, 1 : 출력 제한 상태)
+  enum Output_Limit {NORMAL_BAT, WARNING_BAT};
+  enum Output_Limit output_limit;
 }
 
 /* Initialize */
 on preStart
 {
+  battery_volt = 700;
+  battery_soh = 100;
+  battery_soc = 3000; // 10000
+  battery_temp = 30;
   
+  bmu_alive_flag = OK;
+  battery_hvac = NONE;
+  mode_status = NORMAL;
+  output_limit = NORMAL_BAT;
 }
 
 on start
@@ -36,37 +55,55 @@ on start
 }
 
 /* BMU(Tx) -> VCU(Rx) */
+// 0x211
+void BatteryMonitoring1_func()
+{
+  message BatteryMonitoring1 msg;
+  
+  msg.Battery_SOC = battery_soc / 100;
+  
+  output(msg);
+}
+
+// 0x236
+void BatteryMonitoring0_func()
+{
+  message BatteryMonitoring0 msg;
+  
+  msg.Battery_Volt.phys = battery_volt;
+  msg.Battery_SOH.phys = battery_soh;
+  msg.Battery_Temp.phys = battery_temp;
+  msg.Output_Limit.phys = output_limit;
+  
+  output(msg);
+}
+
+// 0x272
+void RemainingRangeCal_func()
+{
+  message RemainingRangeCal msg;
+  int remain_range;
+  
+  remain_range = battery_capacity * battery_soc * 5 / 10000;
+  msg.Remain_Range.phys = remain_range;
+  
+  output(msg);
+}
+
 void output_30ms()
 {
   // 0x211
-  message BatteryMonitoring1 msg;
-  
-  msg.Battery_SOC = battery_soc;
-  
-  output(msg);
+  BatteryMonitoring0_func();
 }
 void output_50ms()
 {
   // 0x236
-  message BatteryMonitoring0 msg;
-  
-  msg.Battery_Volt = battery_volt;
-  msg.Battery_SOH = battery_soh;
-  msg.Battery_Temp = battery_temp;
-  msg.Output_Limit = output_limit;
-  
-  output(msg);
+  BatteryMonitoring1_func();
 }
 void output_200ms()
 {
   // 0x272
-  message RemainingRangeCal msg;
-  int remain_range;
-  
-  remain_range = battery_capacity * battery_soc * 5 / 100;
-  msg.Remain_Range = remain_range;
-  
-  output(msg);
+  RemainingRangeCal_func();
 }
 
 // Tx Cyclic message
@@ -79,36 +116,70 @@ on timer message_timer_10ms
 }
 
 /* VCU(Tx) -> BMU(Rx) */
+// 0x201
+on message PcanModeStatus
+{
+  switch($PcanModeStatus::Mode_Status)
+  {
+    case 0:
+      mode_status = NORMAL;
+      break;
+    case 1:
+      mode_status = WARNING;
+      break;
+    case 2:
+      mode_status = EMERGENCY;
+      break;
+    default:
+      mode_status = EMERGENCY;
+  }
+}
+
 // 0x271
 on message BatterySocUpdate
 {
   battery_soc += $BatterySocUpdate::Battery_Soc_Change;
+  
+  // Outlier cut-off
+  if(battery_soc < 0)
+    battery_soc = 0;
+  if(battery_soc > 10000)
+    battery_soc = 10000;
+  
+  if(battery_temp <= 15 || battery_temp >= 45 || battery_soc <= 1000)
+    output_limit = WARNING_BAT;
+  else
+    output_limit = NORMAL_BAT;
 }
 
 // 0x256
 on message BatteryTempUpdate
 {
-  battery_hvac = $BatteryTempUpdate::Battery_HVAC;
+  switch($BatteryTempUpdate::Battery_HVAC)
+  {
+    case 0:
+      battery_hvac = NONE;
+      break;
+    case 1:
+      battery_hvac = COOLING;
+      break;
+    case 2:
+      battery_hvac = HEATING;
+      break;
+    default:
+      battery_hvac = NONE;
+  }
 }
 
 // 0x251
 on message PcanHealthyCheck
 {
-  if(mode_status != 2)      // Not emergency
+  if(mode_status != EMERGENCY)      // Not emergency
   {
     message BMUAlive alive;
     alive.BMU_Alive_Flag = 1;
     output(alive);
   }
-}
-
-// 0x201
-on message PcanModeStatus
-{
-  mode_status = $PcanModeStatus::Mode_Status;
-  
-  // 시스템 쿨러 작동?
-  /* if(mode_Status) {statement} */
 }
 
 /* End */

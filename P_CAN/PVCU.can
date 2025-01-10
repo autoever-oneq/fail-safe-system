@@ -1,0 +1,305 @@
+﻿/*@!Encoding:65001*/
+includes
+{
+  
+}
+
+variables
+{
+  /* Timer */
+  msTimer message_timer_10ms; // 주기 메시지를 위한 타이머
+  int timer_cnt = 0;          // 타이머 카운터
+  int alive_cnt = 0;          // ECU 상태 확인용 카운터
+  
+  char alive_flag;            // ECU 상태 확인용 flag 변수
+  
+  /* BMU */
+  int battery_volt;           // 배터리 전압 (0 ~ 1000)
+  int battery_soh;            // 배터리 잔존 수명 (0 ~ 100)
+  int battery_soc = 3000;            // 배터리 충전량 (0 ~ 100)
+  int battery_temp;           // 배터리 온도 (-50 ~ 150)
+  
+  int remain_range;           // 현재 배터리 잔량 기준 예상 남은 주행 거리 (0 ~ 500)
+  
+  char battery_hvac;          // 배터리 냉각 & 히터 시스템 flag (0 : 작동 x, 1 : 냉각 on, 2 : 히터 on)
+  char mode_status;           // 주행 상태 flag (0 : 일반, 1 : 주의, 2 : 긴급)
+  char output_limit;          // 배터리 상태(온도, SOC)에 따른 MCU 출력 제한 flag (0 : 평시 상태, 1 : 출력 제한 상태)
+  
+  /* MCU */
+  int motor_rpm;              // 모터 RPM (0 ~ 11000)
+  
+  /* AHB */
+  int brake_status;           // 회생제동 only / 회생제동+brake / brake only
+  int regen_brake_force;      // 회생제동력 (0 ~ 2000)
+  int mech_brake_force;   
+  
+  /* CCAN ? */
+  int accel_pedal_position; // 엑셀 페달 밟은 세기 (0 ~ 100)
+  int brake_pedal_position; // 브레이크 페달 밟은 세기 (0 ~ 100)
+  char accel_pedal_position_flag; // 엑셀 페달 밟은 여부 (0, 1)
+  char brake_pedal_active;  // 브레이크 페달 밟은 여부 (0, 1)
+  
+  /* BCAN */
+  char regen_brake_level;   // 회생 제동 레벨 (0 ~ 3)
+  
+}
+
+void alive_check()
+{ 
+  if(alive_flag == 0x7)     // 전부 정상 확인
+  {
+    // 상태 확인 초기화
+    alive_cnt = 0;
+    alive_flag = 0;
+  }
+}
+
+void PcanHealthyCheck_func()
+{
+  // 0x251
+  message PcanHealthyCheck msg;
+  output(msg);
+}
+void PcanModeStatus_func(int mode)
+{
+  message PcanModeStatus msg;
+  msg.Mode_Status = mode;
+  output(msg);
+}
+void BatteryTempUpdate_func() // BMU
+{
+  message BatteryTempUpdate msg;
+  msg.Battery_HVAC = battery_hvac;
+  output(msg);
+}
+void BatterySocUpdate_func() // BMU
+{
+  // 0x271
+  message BatterySocUpdate msg;
+  
+  if(accel_pedal_position_flag == 1 && brake_pedal_active == 0)
+    msg.Battery_Soc_Change = -motor_rpm / 1500;
+  else
+    msg.Battery_Soc_Change = regen_brake_force / 150;
+  
+  output(msg);
+}
+
+void RegenBrakeReq_func(void) // AHB
+{
+  message RegenBrakeReq msg;
+  msg.Motor_RPM = motor_rpm;
+  msg.Accel_Pedal_Position_Flag = accel_pedal_position_flag;
+  msg.Regen_Brake_Level = regen_brake_level;
+  output(msg);
+}
+
+void BasicBrakeReq_func(void) // AHB
+{
+  message BasicBrakeReq msg;
+  msg.Motor_RPM = motor_rpm;
+  msg.Brake_Pedal_Active = brake_pedal_active;
+  msg.Brake_Pedal_Position = brake_pedal_position;
+  msg.Regen_Brake_Level = regen_brake_level;
+  output(msg);
+}
+
+void AccelPedalState_func(void)
+{
+  message AccelPedalState msg;
+  msg.Accel_Pedal_Position_Flag = accel_pedal_position_flag;
+  msg.Accel_Pedal_Position = accel_pedal_position;
+  output(msg);
+}
+
+void MotorRpmUpdate_func(void)
+{
+  message MotorRpmUpdate msg;
+  if(accel_pedal_position_flag == 1)
+  {
+    int max_rpm_increase = 300;  // 증가할 양
+    
+    int rpm_increase;
+    rpm_increase = accel_pedal_position * max_rpm_increase * 0.002;
+    
+    msg.Motor_RPM = rpm_increase;
+    // msg.Motor_RPM = motor_rpm + accel_pedal_position; // 엑셀 밟으면 RPM 올려주기
+  }
+  output(msg);
+}
+
+void RegenToMcu_func(void) // 기계식 제동력도 주기
+{
+  message RegenToMcu msg;
+  if(brake_status == 0) // 회생제동만
+  {
+    msg.Regen_Motor_RPM = regen_brake_force * 0.01; // 감소시킬 RPM 계산
+  } 
+  else if(brake_status == 1) // 회생 + 기계
+  { 
+    msg.Regen_Motor_RPM = regen_brake_force * 0.01 + mech_brake_force * 0.01;
+  }
+  else // 기계식 브레이크만
+  {
+    msg.Regen_Motor_RPM = mech_brake_force * 0.001;
+  }
+  output(msg); // 메시지 출력 (VCU -> MCU)
+}
+
+void MCURpmLimit_func(void)
+{
+  message MCURpmLimit msg;
+  msg.Output_Limit = output_limit;
+  output(msg);
+}
+
+void output_50ms()
+{
+  RegenBrakeReq_func();
+  
+  BasicBrakeReq_func();
+  
+  AccelPedalState_func(); // MCU
+  
+  MotorRpmUpdate_func(); // MCU
+}
+
+/* VCU(Tx) -> Other ECU(Rx) */
+void output_100ms()
+{
+  // 0x251
+  PcanHealthyCheck_func();
+  
+  BatteryTempUpdate_func();
+  
+  RegenToMcu_func(); // MCU
+  
+  MCURpmLimit_func(); // MCU
+  
+  BatterySocUpdate_func();
+}
+
+void output_200ms()
+{
+  // 0x271
+  // BatterySocUpdate_func();
+}
+
+// Tx Cyclic message
+on timer message_timer_10ms
+{
+  timer_cnt++;
+  alive_cnt++;
+  
+  if(alive_cnt >= 30)       // 300ms 지남
+  {
+    // 0x201
+    mode_status = 2;
+    PcanModeStatus_func(mode_status);
+  }
+  
+  if(timer_cnt % 1 == 0) {output_50ms();}
+  if(timer_cnt % 2 == 0) {output_100ms();}
+  if(timer_cnt % 5 == 0) {output_200ms();}
+}
+
+/* Initialize */
+on preStart
+{
+  
+}
+
+on start
+{
+  setTimerCyclic(message_timer_10ms, 10);
+}
+
+/* PCAN */
+/* BMU */
+// 0x253
+on message Pcan::BMUAlive
+{
+  alive_flag |= (this.BMU_Alive_Flag) << 0; // 0번째 비트 : BMU
+  alive_check();
+}
+
+// 0x236
+on message Pcan::BatteryMonitoring0
+{
+  battery_volt = this.Battery_Volt.phys;
+  battery_soh = this.Battery_SOH.phys;
+  output_limit = this.Output_Limit.phys;
+  battery_temp = this.Battery_Temp.phys;
+  
+  if(mode_status != 2)
+  {
+    if(battery_soc <= 100)
+    {
+      mode_status = 2;
+      PcanModeStatus_func(2);
+    }
+    else if(battery_temp <= 15 || battery_temp >= 45 || battery_soc <= 1000)
+    {
+      if(mode_status == 0)
+        PcanModeStatus_func(1);
+      output_limit = 1;
+      mode_status = 1;
+    }
+    else
+    {
+      if(mode_status == 1)
+        PcanModeStatus_func(0);
+      output_limit = 0;
+      mode_status = 0;
+    }
+  }
+}
+
+// 0x211
+on message Pcan::BatteryMonitoring1
+{
+  battery_soc = this.Battery_SOC.phys * 100;
+}
+
+// 0x272
+on message Pcan::RemainingRangeCal
+{
+  remain_range = this.Remain_Range.phys;
+}
+
+/* AHB */
+// 0x254
+on message PCAN::AHBAlive
+{
+  alive_flag |= (this.AHB_Alive_Flag) << 1; // 1번째 비트 : BMU
+  alive_check();
+}
+
+/* MCU */
+// 0x255
+on message PCAN::MCUAlive
+{
+  alive_flag |= (this.MCU_Alive_Flag) << 2; // 2번째 비트 : MCU
+  alive_check();
+}
+
+on message PCAN::BrakeResp // AHB
+{
+  brake_status = this.Brake_Status.phys;
+  regen_brake_force = this.Regen_Brake_Force.phys;
+  mech_brake_force = this.Mech_Brake_Force.phys;
+}
+
+on message PCAN::MotorRpmMonitoring // MCU
+{
+  motor_rpm = this.Motor_RPM;
+}
+
+on message PCAN_TEMP
+{
+  accel_pedal_position = this.Accel_Pedal_Position.phys;
+  accel_pedal_position_flag = this.Accel_Pedal_Position_Flag.phys;
+  brake_pedal_position = this.Brake_Pedal_Position.phys;
+  brake_pedal_active = this.Brake_Pedal_Active.phys;
+  regen_brake_level = this.Regen_Brake_Level.phys;
+}

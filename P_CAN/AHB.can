@@ -1,4 +1,4 @@
-/*@!Encoding:65001*/
+﻿/*@!Encoding:65001*/
 includes
 {
   
@@ -6,7 +6,8 @@ includes
 
 variables
 {
-  msTimer brakeresp_timer;
+  msTimer counter_10ms;
+  int cnt;
   
   int brake_status = 0;
   int regen_brake_force = 0;
@@ -23,14 +24,8 @@ variables
   float regen_brake_level_arr[4] = {0, 0.6, 0.7, 0.8};
 }
 
-on start
+void BrakeResp_func(void)
 {
-  cancelTimer(brakeresp_timer);
-  setTimerCyclic(brakeresp_timer, 50);
-}
-
-on timer brakeresp_timer // VCU에 브레이크 보내기
-{ 
   if(mode_status != 2) // 긴급모드가 아니라면
   {
     message BrakeResp msg;
@@ -41,13 +36,25 @@ on timer brakeresp_timer // VCU에 브레이크 보내기
   }
 }
 
+on start
+{
+  cancelTimer(counter_10ms);
+  setTimerCyclic(counter_10ms, 10);
+}
+
+on timer counter_10ms // VCU에 RPM 보내기, 긴급모드에도 보내기
+{ 
+  ++cnt;
+  if(cnt % 5 == 0) BrakeResp_func(); // 50ms 주기
+}
+
 on message PCAN::RegenBrakeReq // 엑셀 밟다 땐 경우(주기 메세지)
 {
   if(mode_status != 2) // 긴급모드가 아니라면
   {
-    motor_rpm = $PCAN::RegenBrakeReq::Motor_RPM;
-    accel_pedal_input_flag = $PCAN::RegenBrakeReq::Accel_Pedal_Position_Flag;
-    regen_brake_level = $PCAN::RegenBrakeReq::Regen_Brake_Level;
+    motor_rpm = this.Motor_RPM.phys;
+    accel_pedal_input_flag = this.Accel_Pedal_Position_Flag.phys;
+    regen_brake_level = this.Regen_Brake_Level.phys;
     
     if(accel_pedal_input_flag == 1) // 엑셀을 계속 밟음 => 브레이크 제동력 0으로 만들기(cont'd)
     {
@@ -71,16 +78,16 @@ on message PCAN::BasicBrakeReq // 주행 중 브레이크 밟음(주기 메세�
 {
   if(mode_status != 2) // 긴급모드가 아니라면
   {
-    int tot_force = 0;
-    brake_pedal_active = $PCAN::BasicBrakeReq::Brake_Pedal_Active;
-    brake_pedal_position = $PCAN::BasicBrakeReq::Brake_Pedal_Position;
-    motor_rpm = $PCAN::BasicBrakeReq::Motor_RPM;
-    regen_brake_level = $PCAN::BasicBrakeReq::Regen_Brake_Level;
+    long tot_force = 0;
+    brake_pedal_active = this.Brake_Pedal_Active.phys;
+    brake_pedal_position = this.Brake_Pedal_Position.phys;
+    motor_rpm = this.Motor_RPM.phys;
+    regen_brake_level = this.Regen_Brake_Level.phys;
     
     if(brake_pedal_active == 1) // 브레이크 밟음
     {
-      tot_force = motor_rpm * brake_pedal_position;
-      if(brake_pedal_position >= 75 | regen_brake_level == 0)
+      tot_force = (long)motor_rpm * (long)brake_pedal_position;
+      if(brake_pedal_position >= 75 || regen_brake_level == 0) // 75 크거나 회생레벨 0일 때
       {
         mech_brake_force = tot_force / 140; // 7857
         brake_status = 2; // 기계만
@@ -98,18 +105,12 @@ on message PCAN::BasicBrakeReq // 주행 중 브레이크 밟음(주기 메세�
         brake_status = 1; // 회생 + 기계
       }
     }
-    else // 브레이크 안 밟음 => 브레이크 제동력 0으로 만들기(cont'd)
-    {
-      brake_status = 0;
-      regen_brake_force = 0;
-      mech_brake_force = 0;
-    }
   }
 }
 
 on message PCAN::PcanModeStatus
 {
-  if($PCAN::PcanModeStatus::Mode_Status == 2){ // 긴급인 경우 ==> cont'd
+  if(this.Mode_Status == 2){ // 긴급인 경우 ==> cont'd
   }
 }
 
