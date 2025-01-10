@@ -64,7 +64,7 @@ on timer Reset_T{
   SbWS_FailInfo=0;
 }
 
-on message CCAN1::DriveModeStatus{
+on message DriveModeStatus{
   modeState = this.ModeState;
     if (modeState == 0) {
 
@@ -82,12 +82,12 @@ on message CCAN1::DriveModeStatus{
 
 on message SetSteer{
   if(this.SetPrimarySensorSteer){
-    isPrimary=0;
+    isPrimary=1;
     SteerConnectionState=1;
     //for S1
   }
   else{
-    isPrimary=1;
+    isPrimary=0;
     SteerConnectionState=1;
    //for S0
   }
@@ -114,7 +114,7 @@ on message SbWA1_Status{
 
 
 on message CommandResetSteer{
-  if(this.HardResetSbWS0){
+  if(this.HardResetSbWS1){
       is_off = 1;
     setTimer(Reset_T, 3);
  }
@@ -136,7 +136,7 @@ on message CANHealthyCheck{
 }
 
 
-on message SteerFeedback0{
+on message SteerFeedback1{
     if (PrimaryAct == 0){
         if(SteerAngle != this.SteerFeedbackAngle){
             SbWS_FailCount++;
@@ -153,9 +153,9 @@ on timer SbWS_timer
   SteerDriverAngle=SteerAngle*16;
   SteerDriverAngle_before = SteerDriverAngle;
 
-  TransmitSteerCommand0();
-  TransmitDriverStatus0();
-  TransmitSensor0FailStatus();
+  TransmitSteerCommand1();
+  TransmitDriverStatus1();
+  TransmitSensor1FailStatus();
   TransmitStatus();
   }
 }
@@ -214,7 +214,7 @@ void Transmit(message * msg) {
 }
 
 void TransmitStatus(){
-  message SbWS0_Status status;
+  message SbWS1_Status status;
   status.EcuIsPrimary.phys=isPrimary;
   status.SbWS_MachineState.phys=MachineState;
   status.EcuStatusMsgCount.phys=ecuStatusMsgCnt;
@@ -224,7 +224,7 @@ void TransmitStatus(){
 }
 
   
- void TransmitDriverStatus0(){
+ void TransmitDriverStatus1(){
    message SteerDriverState0 DriverState;
    DriverState.SteerDriverAngle.phys = SteerDriverAngle;
    DriverState.SteerDriverTorque.phys =SteerDriverTorque;
@@ -232,14 +232,14 @@ void TransmitStatus(){
    Transmit(DriverState);
  }
  
- void TransmitSensor0FailStatus(){
+ void TransmitSensor1FailStatus(){
    message SteerSensor0FailStatus FailStatus;
    FailStatus.SbWS_FailCount.phys=SbWS_FailCount;
   FailStatus.SbWS_FailInfo.phys = SbWS_FailInfo;   
    Transmit(FailStatus);
  } 
 
-void TransmitSteerCommand0(){
+void TransmitSteerCommand1(){
   if(ecuisPrimary){
   message SteerCommand0 cmd;
   cmd.SteerAngle.phys = SteerAngle;

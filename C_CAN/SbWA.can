@@ -1,0 +1,173 @@
+﻿/*@!Encoding:65001*/
+includes
+{
+  
+}
+
+variables
+{
+  msTimer SbWA0_T;
+  timer Reset_T;
+  byte TimerCounter=0;
+  byte CommandLost=0;
+  
+  // VCU's
+  byte ecuisPrimary=1;
+  byte SbWS_Machinstate =0;
+  word ecuStatusMsgCnt =0;
+  byte primaryBus =0;
+  byte is_off =0 ;
+  
+  
+  byte SbWA_FailCount;
+  byte SbWA_FailInfo;
+  
+  byte modeState; // vehicle mode 0(normal) 1(caution) 2(emergency)
+  byte HardResetSig; // 1 to reset
+  byte isHealthyBus; // 0(none),1,2,3(both)
+  
+  int wheelSpeed=0;
+  
+  // Self Data
+  int steerFeedbackAngle;
+  
+  
+  // Actuator info
+  byte PrimaryAct; // 0 or 1
+  int SteerFeedback;
+  
+  
+  byte error=0;
+  
+}
+
+on start{
+ setTimerCyclic(SbWA0_T,10); 
+  
+}
+
+on timer Reset_T{
+  is_off = 0;
+  
+  ecuisPrimary=0;
+  SbWS_Machinstate =0;
+  ecuStatusMsgCnt =0;
+  primaryBus =0;
+  steerFeedbackAngle=0;
+  SbWA_FailCount=0;
+  SbWA_FailInfo=0;
+  
+  CommandLost =0;
+}
+
+on timer SbWA0_T{
+  if(!is_off){ // 10ms Task
+    TimerCounter++;
+    CommandLost++;
+    if(CommandLost >=2){
+      //error 
+    }
+    TransmitStatus();
+  
+    if(TimerCounter==2){  //20ms Task
+      TransmitSteerFeedback();
+      TransmitSteerActFailStatus();
+      TimerCounter=0;
+     }
+  
+  }
+}
+
+on message SetSteer{
+  if (this.SetPrimaryActuatorSteer){
+   // A1 is Primary
+    ecuisPrimary=0;
+  }
+  else{
+    ecuisPrimary=1;
+  }
+}
+
+on message CommandResetSteer{
+  if(this.HardResetSbWA0){
+    is_off =1;
+    setTimer(Reset_T,3);
+  }
+}
+
+on message SteerCommand0{
+  steerFeedbackAngle= this.SteerAngle;
+  CommandLost =0;
+}
+
+on message SteerCommand1{
+  steerFeedbackAngle= this.SteerAngle;
+  CommandLost =0;
+}
+
+
+
+on message CANHealthyCheck{
+ if(!this.CAN1Healthy){
+   if(!this.CAN2Healthy){
+      primaryBus = 0; 
+    }
+    else{
+      primaryBus =2;   
+    }
+ }
+ else{
+   if(!this.CAN2Healthy){
+      primaryBus = 1; 
+    }
+    else
+     primaryBus = 3;    
+ }
+}
+
+
+
+
+void Transmit(message * msg) {
+  if(primaryBus==3) {
+    msg.can=1;
+    output(msg);
+    msg.can=2;
+    output(msg);
+  }
+  else
+  {
+   msg.can=primaryBus;
+    output(msg);
+  }
+}
+
+void TransmitStatus(){
+  message SbWA0_Status status;
+  status.EcuIsPrimary.phys = ecuisPrimary;
+  status.SbWA_MachineState.phys =SbWS_Machinstate;
+  status.EcuStatusMsgCount.phys = ecuStatusMsgCnt;
+  status.PrimaryBus.phys = primaryBus;
+  Transmit(status);
+  ecuStatusMsgCnt++;
+}
+
+void TransmitSteerFeedback(){
+  if( ecuisPrimary){
+  message SteerFeedback0 feedback;
+  feedback.SteerFeedbackAngle.phys = steerFeedbackAngle;
+  Transmit(feedback);
+  }
+}
+
+void TransmitSteerActFailStatus(){
+  message SteerActuator0FailStatus Failstatus;
+  Failstatus.SbWA_FailCount = SbWA_FailCount;
+  Failstatus.SbWA_FailInfo = SbWA_FailInfo;
+  Transmit(Failstatus);  
+}
+
+
+on message 0x500{
+ SbWA_FailCount ++;
+}
