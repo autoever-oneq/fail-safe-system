@@ -38,7 +38,12 @@ variables
   byte SteerConnectionState=0;
   int carspeed=0;
   
-  byte error;
+  enum MalfunctionState {
+  MALFUNCTION_NONFAULT,
+  MALFUNCTION_TRANSCEIVER_ERR,
+  MALFUNCTION_LOGIC_ERR
+  };
+  
   
   
   // Actuator info
@@ -81,6 +86,7 @@ on message CCAN1::DriveModeStatus{
 }
 
 on message SetSteer{
+   if(MachineState == !MALFUNCTION_TRANSCEIVER_ERR){
   if(this.SetPrimarySensorSteer){
     isPrimary=0;
     SteerConnectionState=1;
@@ -91,36 +97,44 @@ on message SetSteer{
     SteerConnectionState=1;
    //for S0
   }
-  
+   }
 }
 
 on message PowertrainStatus{
+   if(MachineState == !MALFUNCTION_TRANSCEIVER_ERR){
  carspeed=this.VehicleSpeed; 
+   }
 }
 
 on message SbWA0_Status{
+   if(MachineState == !MALFUNCTION_TRANSCEIVER_ERR){
   if(this.EcuIsPrimary == 0){
    PrimaryAct=1; 
   } 
+   }
 }
 
 on message SbWA1_Status{
+   if(MachineState == !MALFUNCTION_TRANSCEIVER_ERR){
   if(this.EcuIsPrimary == 0){
    PrimaryAct=0; 
   } 
 }
-
+}
 
 
 
 on message CommandResetSteer{
+   if(MachineState == !MALFUNCTION_TRANSCEIVER_ERR){
   if(this.HardResetSbWS0){
       is_off = 1;
     setTimer(Reset_T, 3);
  }
+   }
 }
 
 on message CANHealthyCheck{
+   if(MachineState == !MALFUNCTION_TRANSCEIVER_ERR){
  if(!this.CAN1Healthy){
    if(!this.CAN2Healthy){
       primaryBus = 0; 
@@ -133,16 +147,19 @@ on message CANHealthyCheck{
      primaryBus = 1;    
    
  }
+   }
 }
 
 
 on message SteerFeedback0{
+  if(MachineState == !MALFUNCTION_TRANSCEIVER_ERR){
+    
     if (PrimaryAct == 0){
         if(SteerAngle != this.SteerFeedbackAngle){
-            SbWS_FailCount++;
+          
     }
     }
-  
+  }
   }
 
 
@@ -200,15 +217,17 @@ int CalcAngleWithRestore(int theta_bf, long steer, int speed, long driver_angle_
 }
 
 void Transmit(message * msg) {
+  if(MachineState == MALFUNCTION_TRANSCEIVER_ERR)
+    return;
   if(primaryBus==3) {
-    msg.can=1;
-    output(msg);
-    msg.can=2;
-    output(msg);
-  }
+      msg.can=1;
+      output(msg);
+      msg.can=2;
+      output(msg);
+      }
   else
   {
-   msg.can=primaryBus;
+    msg.can=primaryBus;
     output(msg);
   }
 }
@@ -220,6 +239,7 @@ void TransmitStatus(){
   status.EcuStatusMsgCount.phys=ecuStatusMsgCnt;
   status.PrimaryBus.phys=primaryBus;
   Transmit(status);
+  if(!MALFUNCTION_TRANSCEIVER_ERR)
   ecuStatusMsgCnt++;
 }
 
@@ -248,6 +268,15 @@ void TransmitSteerCommand0(){
   Transmit(cmd);
   }
 }
+
 on message 0x500{
- SbWS_FailCount ++;
+  MachineState = MALFUNCTION_NONFAULT;
+}
+
+on message 0x501{
+  MachineState = MALFUNCTION_TRANSCEIVER_ERR;
+}
+
+on message 0x502{
+  MachineState = MALFUNCTION_LOGIC_ERR;
 }
