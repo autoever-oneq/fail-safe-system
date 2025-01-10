@@ -8,6 +8,8 @@ variables
   int Timer_500ms = 0;
   int Timer_1000ms = 0;
   int Timer_10s = 0;
+  int CurVelocity = 0;
+  int Motor_RPM = 0;
   int StartUpFlag = 0;
 }
 on start
@@ -135,5 +137,8 @@ void sendMsg_StartUp(int ButtonState){
 }
 
 
-
+void Calculate_CurVelocity(){
+  CurVelocity = (3600 *0.677 * pi * Motor_RPM) / (60 * 10 * 1000);
+  //3600 : 한시간 당 초 0.677 : 18인치 휠 지름 60 : 초당 rpm을 분으로 환산 1000 : 킬로미터 당 미터 
+}
 

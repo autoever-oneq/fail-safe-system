@@ -1,0 +1,29 @@
+﻿/*@!Encoding:65001*/
+includes
+{
+  
+}
+
+variables
+{
+  int Turn = 0;
+  int HeatCool = 0;
+  int Mode = 0;
+  int Strength = 0;
+  int Temp = 0;
+  int ADSOperation = 0;
+}
+
+on message HVACControl
+{
+  Turn = this.HVACOperation; 
+  HeatCool = this.HVACHeatCool;
+  Mode = this.HVACMode;
+  Strength = this.HVACStrength;
+  Temp = this.HVACTemp;
+}
+
+on message ADSOperation 
+{
+  ADSOperation = this.ADSOperation;
+}
