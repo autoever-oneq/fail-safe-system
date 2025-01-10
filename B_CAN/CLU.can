@@ -7,7 +7,7 @@ includes
 variables
 {
     msTimer loop;
-    int RegBrakeLevel = 0;
+    byte RegBrakeLevel = 0;
     int Ignition_Status = 0;
     int StartUpFlag = 0;
     int Gear_Status = 0; 
@@ -19,8 +19,14 @@ variables
     }GearDisplay;
 
     const int STAGE_REGBR_INPUT = 4;
+    const int AverageTirePressure = 500;
 }
-
+on prestart{
+  @sysvar::BODY::CLU_FL = 0;
+  @sysvar::BODY::CLU_FR = 0;
+  @sysvar::BODY::CLU_RL = 0;
+  @sysvar::BODY::CLU_RR = 0;
+}
 on start
 {
   sendMsg_RegBrake_level(RegBrakeLevel);
@@ -77,6 +83,7 @@ on sysvar_update BODY::IGNITIONBUTTON
   }
 }
 
+
 on message StartUp
 {
   StartUpFlag = this.StartUpSignal;
@@ -92,9 +99,30 @@ on message GearInput
   Gear_Status = this.GearInput;
 }
 
-void sendMsg_RegBrake_level(int ButtonState) {
+on message TireStateFL{ 
+  if (this.WheelFLPressure <= AverageTirePressure * 0.8 || this.WheelFLPressure >= AverageTirePressure * 1.2){
+    @sysvar::BODY::CLU_FL = 1;
+  }
+}
+on message TireStateFR{
+  if ((this.WheelFRPressure <= AverageTirePressure * 0.8) || (this.WheelFRPressure >= AverageTirePressure * 1.2)){
+    @sysvar::BODY::CLU_FL = 1;
+  }
+}
+on message TireStateRL{
+  if ((this.WheelRLPressure <= AverageTirePressure * 0.8) || (this.WheelRLPressure >= AverageTirePressure * 1.2)){
+    @sysvar::BODY::CLU_FL = 1;
+  }
+}
+on message TireStateRR{
+  if ((this.WheelRRPressure <= AverageTirePressure * 0.8) || (this.WheelRRPressure >= AverageTirePressure * 1.2)){
+    @sysvar::BODY::CLU_FL = 1;
+  }
+}
+
+void sendMsg_RegBrake_level(byte ButtonState) {
   message RegBrake_level msg;
-  msg.RegBrake_Level.phys = RegBrakeLevel;
+  msg.RegBrake_Level.phys = ButtonState;
   if(StartUpFlag == 1) output(msg);
 }
 

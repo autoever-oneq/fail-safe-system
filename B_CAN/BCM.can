@@ -29,12 +29,15 @@ variables
   const int STAGE_GEAR_INPUT = 4;
 }
 
-on start
-{
-  setTimerCyclic(loop,5000);
+on prestart{
   @sysvar::BODY::BRAKELIGHT = 0;
   @sysvar::BODY::LEFTTURNON = 0;
   @sysvar::BODY::RIGHTTURNON = 0;
+}
+
+on start
+{
+  setTimerCyclic(loop,5000);
   sendMsg_GearInput(GearInputLevel);
 }
 

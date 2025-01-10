@@ -93,10 +93,10 @@ BO_ 775 FrmPCAN_CLU_500ms: 3 VCU
  SG_ Regen_Brake_Status : 0|1@1+ (1,0) [0|1] "Flag"  CLU
 
 BO_ 771 FrmVCU_CLU_100ms: 1 VCU
- SG_ CurVelocity : 0|8@1+ (1,0) [0|250] "km/h"  CLU
+ SG_ CurVelocity : 0|8@1+ (1,0) [0|250] "km/h"  BCM,CLU
 
 BO_ 800 TirePressureAlert: 1 TPMS
- SG_ TireAlertFlag : 0|1@1+ (1,0) [0|1] "Flag"  CLU
+ SG_ TireAlertFlag : 0|1@1+ (1,0) [0|1] "Flag"  VCU,CLU
 
 BO_ 785 RegBrake_level: 1 CLU
  SG_ RegBrake_Level : 0|2@1+ (1,0) [0|3] "stage"  VCU,CLU
