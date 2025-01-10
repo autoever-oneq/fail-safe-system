@@ -34,10 +34,10 @@ on timer loop{
 
 
 
-on sysvar_update INPUT::REGENBUTTON
+on sysvar_update BODY::REGENBUTTON
 {
   if (StartUpFlag == 1){
-    if (@sysvar::INPUT::REGENBUTTON == 1){
+    if (@sysvar::BODY::REGENBUTTON == 1){
       RegBrakeLevel++;
       if(RegBrakeLevel == STAGE_REGBR_INPUT) {
         RegBrakeLevel = 0;
@@ -47,23 +47,23 @@ on sysvar_update INPUT::REGENBUTTON
   }
 }
 
-on sysvar_update INPUT::CAUTIONBUTTON
+on sysvar_update BODY::CAUTIONBUTTON
 {
-  sendMsg_CautionTurnInput(@sysvar::INPUT::CAUTIONBUTTON);  
+  sendMsg_CautionTurnInput(@sysvar::BODY::CAUTIONBUTTON);  
 }
 
-on sysvar_update INPUT::LEFTBUTTON
+on sysvar_update BODY::LEFTBUTTON
 {
-    sendMsg_LeftTurnInput(@sysvar::INPUT::LEFTBUTTON);  
+    sendMsg_LeftTurnInput(@sysvar::BODY::LEFTBUTTON);  
 }
 
-on sysvar_update INPUT::RIGHTBUTTON{
-    sendMsg_RightTurnInput(@sysvar::INPUT::RIGHTBUTTON); 
+on sysvar_update BODY::RIGHTBUTTON{
+    sendMsg_RightTurnInput(@sysvar::BODY::RIGHTBUTTON); 
 }
 
-on sysvar_update INPUT::IGNITIONBUTTON
+on sysvar_update BODY::IGNITIONBUTTON
 {
-  if (@sysvar::INPUT::IGNITIONBUTTON == 1){
+  if (@sysvar::BODY::IGNITIONBUTTON == 1){
     if ((Gear_Status == P)||(Gear_Status == N)) {     
       if(Ignition_Status == 0) {
         Ignition_Status = 1;
@@ -84,7 +84,7 @@ on message StartUp
 
 on message TirePressureAlert 
 {
-  @sysvar::HW::TIREALERT = this.TireAlertFlag;
+  @sysvar::BODY::TIREALERT = this.TireAlertFlag;
 }
 
 on message GearInput

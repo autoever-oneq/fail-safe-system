@@ -31,9 +31,9 @@ variables
 on start
 {
   setTimerCyclic(loop,5000);
-  @sysvar::HW::BRAKELIGHT = 0;
-  @sysvar::HW::LEFTTURNON = 0;
-  @sysvar::HW::RIGHTTURNON = 0;
+  @sysvar::BODY::BRAKELIGHT = 0;
+  @sysvar::BODY::LEFTTURNON = 0;
+  @sysvar::BODY::RIGHTTURNON = 0;
   sendMsg_GearInput(GearInputLevel);
 }
 
@@ -47,10 +47,10 @@ on timer loop
 
 
 
-on sysvar_update INPUT::GEARINPUT
+on sysvar_update BODY::GEARINPUT
 {
   if (StartUpFlag == 1){
-    if (@sysvar::INPUT::GEARINPUT == 1){
+    if (@sysvar::BODY::GEARINPUT == 1){
       GearInputLevel++;
       if(GearInputLevel == STAGE_GEAR_INPUT) {
         GearInputLevel = 0;
@@ -70,13 +70,13 @@ on message LeftTurnSignalLampControl
   LeftButtonStatus = this.LeftTurnSignalControl;
   if (Caution_Lamp_Status == 0){
     if (this.LeftTurnSignalControl == 1) {
-      if (@sysvar::HW::RIGHTTURNON == 1){
-        @sysvar::HW::RIGHTTURNON = 0;
+      if (@sysvar::BODY::RIGHTTURNON == 1){
+        @sysvar::BODY::RIGHTTURNON = 0;
       }
-      @sysvar::HW::LEFTTURNON = 1; 
+      @sysvar::BODY::LEFTTURNON = 1; 
     }
     else if (this.LeftTurnSignalControl == 0) {
-      @sysvar::HW::LEFTTURNON = 0;
+      @sysvar::BODY::LEFTTURNON = 0;
     }
   }
 }
@@ -86,13 +86,13 @@ on message RightTurnSignalLampControl
   RightButtonStatus = this.RightTurnSignalControl;
   if (Caution_Lamp_Status == 0){
     if ($RightTurnSignalControl == 1) {
-      if (@sysvar::HW::LEFTTURNON == 1){
-        @sysvar::HW::LEFTTURNON = 0;
+      if (@sysvar::BODY::LEFTTURNON == 1){
+        @sysvar::BODY::LEFTTURNON = 0;
       }
-      @sysvar::HW::RIGHTTURNON = 1;
+      @sysvar::BODY::RIGHTTURNON = 1;
     }
     else if ($RightTurnSignalControl == 0) {
-      @sysvar::HW::RIGHTTURNON = 0;
+      @sysvar::BODY::RIGHTTURNON = 0;
     }
   }
 }
@@ -102,16 +102,16 @@ on message CautionLampControl
   CautionButtonStatus = this.CautionLampControl;
   if (Drive_Mode_Status != EMERGENCY_MODE)
     if (this.CautionLampControl == 1) {
-      LastLeftTurn = @sysvar::HW::LEFTTURNON;
-      LastRightTurn = @sysvar::HW::RIGHTTURNON;
-      @sysvar::HW::RIGHTTURNON = 1;
-      @sysvar::HW::LEFTTURNON = 1;
+      LastLeftTurn = @sysvar::BODY::LEFTTURNON;
+      LastRightTurn = @sysvar::BODY::RIGHTTURNON;
+      @sysvar::BODY::RIGHTTURNON = 1;
+      @sysvar::BODY::LEFTTURNON = 1;
       Caution_Lamp_Status = 1;
       LastCautionLight = 1;
     }
     else {   
-      @sysvar::HW::LEFTTURNON = LastLeftTurn;
-      @sysvar::HW::RIGHTTURNON = LastRightTurn;
+      @sysvar::BODY::LEFTTURNON = LastLeftTurn;
+      @sysvar::BODY::RIGHTTURNON = LastRightTurn;
       Caution_Lamp_Status = 0;
       LastCautionLight = 0;
     }
@@ -124,10 +124,10 @@ on message CautionLampControl
 on message BrakeInputFlag
 {
   if (this.BrakeInputFlag == 1) {
-    @sysvar::HW::BRAKELIGHT = 1;
+    @sysvar::BODY::BRAKELIGHT = 1;
   }
   else {
-    @sysvar::HW::BRAKELIGHT = 0;
+    @sysvar::BODY::BRAKELIGHT = 0;
   }
 }
 
@@ -138,17 +138,17 @@ on message DriveMode
   Drive_Mode_Status = this.DriveMode;
   if (Drive_Mode_Status == EMERGENCY_MODE) {
     Caution_Lamp_Status = 1;
-    @sysvar::HW::LEFTTURNON = 1;
-    @sysvar::HW::RIGHTTURNON = 1;  
+    @sysvar::BODY::LEFTTURNON = 1;
+    @sysvar::BODY::RIGHTTURNON = 1;  
   }
   else {
     if (LastCautionLight == 0){
-      @sysvar::HW::LEFTTURNON = LeftButtonStatus;
-      @sysvar::HW::RIGHTTURNON = RightButtonStatus;  
+      @sysvar::BODY::LEFTTURNON = LeftButtonStatus;
+      @sysvar::BODY::RIGHTTURNON = RightButtonStatus;  
     }
     else {
-      @sysvar::HW::LEFTTURNON = LeftButtonStatus;
-      @sysvar::HW::RIGHTTURNON = RightButtonStatus;  
+      @sysvar::BODY::LEFTTURNON = LeftButtonStatus;
+      @sysvar::BODY::RIGHTTURNON = RightButtonStatus;  
     }
   }
 }

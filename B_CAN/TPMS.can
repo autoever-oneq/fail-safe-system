@@ -23,10 +23,10 @@ variables
 on start 
 {
   setTimerCyclic(loop,100);
-  @sysvar::STATUS::FLTIREPRESSURE = 500;
-  @sysvar::STATUS::FRTIREPRESSURE = 500;
-  @sysvar::STATUS::RLTIREPRESSURE = 500;
-  @sysvar::STATUS::RRTIREPRESSURE = 500;
+  @sysvar::BODY::FLTIREPRESSURE = 500;
+  @sysvar::BODY::FRTIREPRESSURE = 500;
+  @sysvar::BODY::RLTIREPRESSURE = 500;
+  @sysvar::BODY::RRTIREPRESSURE = 500;
   ReadTireStatus();
   UpdateTireStatus();
 }
@@ -65,10 +65,10 @@ on message StartUp
 
 void ReadTireStatus(){
   if (StartUpFlag == 1){
-    CurrentTireStatus.FL = @sysvar::STATUS::FLTIREPRESSURE;
-    CurrentTireStatus.FR = @sysvar::STATUS::FRTIREPRESSURE;
-    CurrentTireStatus.RL = @sysvar::STATUS::RLTIREPRESSURE;
-    CurrentTireStatus.RR = @sysvar::STATUS::RRTIREPRESSURE;  
+    CurrentTireStatus.FL = @sysvar::BODY::FLTIREPRESSURE;
+    CurrentTireStatus.FR = @sysvar::BODY::FRTIREPRESSURE;
+    CurrentTireStatus.RL = @sysvar::BODY::RLTIREPRESSURE;
+    CurrentTireStatus.RR = @sysvar::BODY::RRTIREPRESSURE;  
   }
 }
 
