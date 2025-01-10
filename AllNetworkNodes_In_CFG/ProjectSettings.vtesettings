@@ -463,6 +463,9 @@
 &lt;NodeProperties&gt;
 &lt;NodeKey&gt;{RootSymbolItem/{SysVarGroupItem/BODY&lt;/NodeKey&gt;
 &lt;/NodeProperties&gt;
+&lt;NodeProperties&gt;
+&lt;NodeKey&gt;{RootSymbolItem/{SysVarGroupItem/Chassis&lt;/NodeKey&gt;
+&lt;/NodeProperties&gt;
 &lt;/NodeTreeProperties&gt;
 &lt;/ViewProperties&gt;
 &lt;ViewProperties&gt;
@@ -562,6 +565,9 @@
 &lt;NodeProperties&gt;
 &lt;NodeKey&gt;{RootSymbolItem/{SysVarGroupItem/BODY&lt;/NodeKey&gt;
 &lt;/NodeProperties&gt;
+&lt;NodeProperties&gt;
+&lt;NodeKey&gt;{RootSymbolItem/{SysVarGroupItem/Chassis&lt;/NodeKey&gt;
+&lt;/NodeProperties&gt;
 &lt;/NodeTreeProperties&gt;
 &lt;/ViewProperties&gt;
 &lt;ViewProperties&gt;
@@ -660,6 +666,9 @@
 &lt;NodeTreeProperties&gt;
 &lt;NodeProperties&gt;
 &lt;NodeKey&gt;{RootSymbolItem/{SysVarGroupItem/BODY&lt;/NodeKey&gt;
+&lt;/NodeProperties&gt;
+&lt;NodeProperties&gt;
+&lt;NodeKey&gt;{RootSymbolItem/{SysVarGroupItem/Chassis&lt;/NodeKey&gt;
 &lt;/NodeProperties&gt;
 &lt;/NodeTreeProperties&gt;
 &lt;/ViewProperties&gt;

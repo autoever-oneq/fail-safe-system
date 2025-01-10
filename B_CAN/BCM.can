@@ -11,6 +11,7 @@ variables
   int Drive_Mode_Status = 0;
   int GearInputLevel = 0;
   int StartUpFlag = 0;
+  int CurVelocity = 0;
   
   int LastLeftTurn = 0;
   int LastRightTurn = 0;
@@ -50,12 +51,14 @@ on timer loop
 on sysvar_update BODY::GEARINPUT
 {
   if (StartUpFlag == 1){
-    if (@sysvar::BODY::GEARINPUT == 1){
-      GearInputLevel++;
-      if(GearInputLevel == STAGE_GEAR_INPUT) {
-        GearInputLevel = 0;
+    if(CurVelocity == 0) {
+      if (@sysvar::BODY::GEARINPUT == 1){
+        GearInputLevel++;
+        if(GearInputLevel == STAGE_GEAR_INPUT) {
+          GearInputLevel = 0;
+        }
+      sendMsg_GearInput(GearInputLevel);
       }
-    sendMsg_GearInput(GearInputLevel);
     }
   }
 }
@@ -152,6 +155,11 @@ on message DriveMode
     }
   }
 }
+
+on message FrmVCU_CLU_100ms{
+  CurVelocity = this.CurVelocity;
+}
+
 
 void sendMsg_FLTurnVoltCurrent() {
   message FLTurnVoltCurrent msg;

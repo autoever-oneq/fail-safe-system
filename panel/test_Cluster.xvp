@@ -1,6 +1,18 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Panel Type="Vector.CANalyzer.Panels.PanelSerializer, Vector.CANalyzer.Panels.Serializer, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null">
   <Object Type="Vector.CANalyzer.Panels.Runtime.Panel, Vector.CANalyzer.Panels.Common, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="Panel" ControlName="test_Cluster">
+    <Object Type="Vector.CANalyzer.Panels.Design.TrackBarControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X33f48996ef2cee4ffaea06cec29fb38b3bdb" ControlName="Track Bar 1">
+      <Property Name="Name">X33f48996ef2cee4ffaea06cec29fb38b3bdb</Property>
+      <Property Name="Size">492, 30</Property>
+      <Property Name="Location">158, 330</Property>
+      <Property Name="TabIndex">12</Property>
+      <Property Name="MaximumDouble">1000</Property>
+      <Property Name="MinimumDouble">-1000</Property>
+      <Property Name="MaximumSize">100000, 30</Property>
+      <Property Name="Minimum">-1000</Property>
+      <Property Name="Maximum">1000</Property>
+      <Property Name="SymbolConfiguration">8;16;Chassis;;;DriverSteerAngle;1;;;-1;;;Value;;;0</Property>
+    </Object>
     <Object Type="Vector.CANalyzer.Panels.Design.LEDControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X870db5dbecc99e4630e9e61efacafcf5ed68" ControlName="LED Control 4">
       <Property Name="Name">X870db5dbecc99e4630e9e61efacafcf5ed68</Property>
       <Property Name="Size">57, 57</Property>
@@ -22,7 +34,7 @@
     <Object Type="Vector.CANalyzer.Panels.Design.TextBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="Xce9ef4d9e30e4e422aeb62be679964437cd7" ControlName="Input/Output Box 2">
       <Property Name="Name">Xce9ef4d9e30e4e422aeb62be679964437cd7</Property>
       <Property Name="Size">166, 21</Property>
-      <Property Name="Location">562, 183</Property>
+      <Property Name="Location">560, 183</Property>
       <Property Name="AlarmGeneralSettings">1;2;0;100</Property>
       <Property Name="AlarmLowerBkgColor">Salmon</Property>
       <Property Name="AlarmLowerTextColor">Black</Property>
@@ -44,7 +56,7 @@
       <Property Name="Location">611, 210</Property>
       <Property Name="TabIndex">8</Property>
       <Property Name="Text">Gear Input</Property>
-      <Property Name="SymbolConfiguration">8;2;BCAN;BCM;GearInput;GearInput;1;Bcan;;-1;;;Value;;;0</Property>
+      <Property Name="SymbolConfiguration">8;16;BODY;;;GEARINPUT;1;;;-1;;;Value;;;0</Property>
     </Object>
     <Object Type="Vector.CANalyzer.Panels.Design.TextBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X4b8ed08ce4183e4209eb6f7e73a915a9b8e0" ControlName="Input/Output Box 1">
       <Property Name="Name">X4b8ed08ce4183e4209eb6f7e73a915a9b8e0</Property>
