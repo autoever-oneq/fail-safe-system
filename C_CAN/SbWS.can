@@ -28,7 +28,7 @@ variables
   byte isPrimary=0;
   byte MachineState=0;
   
-  long SteerDriverAngle;
+  long SteerDriverAngle=0;
   long SteerDriverAngle_before=0;
   int SteerDriverTorque=0;
   
@@ -53,12 +53,15 @@ variables
   int SteerFeedback;
   
   
+  
+  
  
 }
 
 on start
 {
   setTimerCyclic(SbWS_timer,10);
+  @sysvar::Chassis::DriverSteerAngle =SteerDriverAngle;
 }
 
 on timer Reset_T{
@@ -85,6 +88,10 @@ on message CCAN1::DriveModeStatus{
     else {
     
     }
+}
+
+on sysvar Chassis::DriverSteerAngle{
+  SteerDriverAngle= @sysvar::Chassis::DriverSteerAngle;
 }
 
 on message SetSteer{
