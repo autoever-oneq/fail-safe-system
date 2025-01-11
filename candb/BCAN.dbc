@@ -36,38 +36,41 @@ BS_:
 BU_: HVAC TPMS CLU BCM VCU
 
 
+BO_ 791 TireCautionAlert: 1 CLU
+ SG_ TireCautionAlertFlag : 0|1@1+ (1,0) [0|1] "Flag"  VCU
+
 BO_ 768 StartUp: 1 VCU
- SG_ StartUpSignal : 0|1@1+ (1,0) [0|1] ""  BCM,CLU,HVAC,TPMS
+ SG_ StartUpSignal : 0|1@1+ (1,0) [0|1] "Flag"  BCM,CLU,HVAC,TPMS
 
 BO_ 790 CautionTurnInput: 1 CLU
- SG_ CautionTurnSignal : 0|1@1+ (1,0) [0|1] ""  VCU
+ SG_ CautionTurnSignal : 0|1@1+ (1,0) [0|1] "Flag"  VCU
 
 BO_ 789 RightTurnInput: 1 CLU
- SG_ RightTurnInputSignal : 0|1@1+ (1,0) [0|1] ""  VCU
+ SG_ RightTurnInputSignal : 0|1@1+ (1,0) [0|1] "Flag"  VCU
 
 BO_ 788 LeftTurnInput: 1 CLU
- SG_ LeftTurnInputSignal : 0|1@1+ (1,0) [0|1] ""  VCU
+ SG_ LeftTurnInputSignal : 0|1@1+ (1,0) [0|1] "Flag"  VCU
 
 BO_ 784 IgnitionOn: 1 CLU
- SG_ IgnitionFlag : 0|1@1+ (1,0) [0|1] ""  VCU
+ SG_ IgnitionFlag : 0|1@1+ (1,0) [0|1] "Flag"  VCU
 
 BO_ 776 BrakeInputFlag: 1 VCU
  SG_ BrakeInputFlag : 0|1@1+ (1,0) [0|1] "Flag"  BCM
 
 BO_ 770 DriveMode: 1 VCU
- SG_ DriveMode : 0|2@1+ (1,0) [0|2] ""  BCM
+ SG_ DriveMode : 0|2@1+ (1,0) [0|2] "Flag"  BCM
 
 BO_ 816 GearInput: 1 BCM
- SG_ GearInput : 0|2@1+ (1,0) [0|3] ""  CLU,VCU
+ SG_ GearInput : 0|2@1+ (1,0) [0|3] "level"  CLU,VCU
 
 BO_ 787 ADSOperation: 1 CLU
- SG_ ADSOperation : 0|2@1+ (1,0) [0|2] ""  HVAC
+ SG_ ADSOperation : 0|2@1+ (1,0) [0|2] "level"  HVAC
 
 BO_ 786 HVACControl: 2 CLU
- SG_ HVACTemp : 10|5@1+ (1,18) [18|32] ""  HVAC
- SG_ HVACStrength : 8|2@1+ (1,0) [0|2] ""  HVAC
+ SG_ HVACTemp : 10|5@1+ (1,18) [18|32] "degree"  HVAC
+ SG_ HVACStrength : 8|2@1+ (1,0) [0|2] "level"  HVAC
  SG_ HVACOperation : 5|2@1+ (1,0) [0|1] "Flag"  HVAC
- SG_ HVACMode : 2|3@1+ (1,0) [0|7] ""  HVAC
+ SG_ HVACMode : 2|3@1+ (1,0) [0|7] "level"  HVAC
  SG_ HVACHeatCool : 0|2@1+ (1,0) [0|2] "Flag"  HVAC
 
 BO_ 820 RRTurnVoltCurrent: 1 BCM
@@ -87,7 +90,7 @@ BO_ 817 FLTurnVoltCurrent: 1 BCM
  SG_ FLCurrent : 0|5@1+ (1,0) [0|30] "mA"  VCU
 
 BO_ 775 FrmPCAN_CLU_500ms: 3 VCU
- SG_ BatteryTemp : 16|8@1- (1,90) [-50|150] ""  CLU
+ SG_ BatteryTemp : 16|8@1- (1,90) [-50|150] "degree"  CLU
  SG_ BatterySOC : 8|7@1+ (1,0) [0|100] "percent"  CLU
  SG_ Battery_Output_Limit : 1|1@1+ (1,0) [0|1] "Flag"  CLU
  SG_ Regen_Brake_Status : 0|1@1+ (1,0) [0|1] "Flag"  CLU

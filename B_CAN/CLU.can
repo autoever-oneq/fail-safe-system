@@ -84,24 +84,24 @@ on sysvar_update BODY::IGNITIONBUTTON
   }
 }
 
-/*
+
 on sysvar BODY::CLU_FL{
-  sendMsg_DriveMode(@sysvar::BODY::CLU_FL);
+  sendMsg_TireCautionAlert();
 }
 
 on sysvar BODY::CLU_FR{
-  sendMsg_DriveMode(@sysvar::BODY::CLU_FR);
+  sendMsg_TireCautionAlert();
 }
 
 on sysvar BODY::CLU_RL{
-  sendMsg_DriveMode(@sysvar::BODY::CLU_RL);
+  sendMsg_TireCautionAlert();
 }
 
 on sysvar BODY::CLU_RR{
-  sendMsg_DriveMode(@sysvar::BODY::CLU_RR);
+  sendMsg_TireCautionAlert();
 }
 
-*/
+
 
 on message StartUp
 {
@@ -185,10 +185,9 @@ void sendMsg_ADSOperation(){
   if(StartUpFlag == 1) output(msg);
 }
 
-/*
-void sendMsg_DriveMode(int ModeStatus){
-  message DriveMode msg;
-  msg.DriveMode.phys = ModeStatus;
+
+void sendMsg_TireCautionAlert(){
+  message TireCautionAlert msg;
+  msg.TireCautionAlertFlag.phys = 1;
   output(msg);
 }
-*/
