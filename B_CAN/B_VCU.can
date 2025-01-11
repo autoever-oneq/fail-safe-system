@@ -49,20 +49,19 @@ variables
   /*--------PCAN---------*/
 }
 
-on prestart{
+on start
+{
   @sysvar::BODY::LEFTTURNON = 0;
   @sysvar::BODY::RIGHTTURNON = 0;
   @sysvar::BODY::TIREALERT = 0;
   @sysvar::DRIVEMODE = GENERAL_MODE;
-}
-on start
-{
   setTimerCyclic(loop, 10);
 }
 
 
 on timer loop
 {
+  /*
   alive_cnt++;
    if(alive_cnt >= 30 && mode_status != EMERGENCY_MODE) // cont'd
   {
@@ -70,7 +69,7 @@ on timer loop
     mode_status = EMERGENCY_MODE;
     @sysvar::DRIVEMODE = EMERGENCY_MODE;
   }
-
+  */
   Timer_10ms ++;
   TimeScheduling10ms(); 
   if (Timer_10ms % 2 == 0){

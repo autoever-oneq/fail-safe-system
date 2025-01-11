@@ -21,14 +21,13 @@ variables
     const int STAGE_REGBR_INPUT = 4;
     const int AverageTirePressure = 500;
 }
-on prestart{
+
+on start
+{
   @sysvar::BODY::CLU_FL = 0;
   @sysvar::BODY::CLU_FR = 0;
   @sysvar::BODY::CLU_RL = 0;
   @sysvar::BODY::CLU_RR = 0;
-}
-on start
-{
   Ignition_Status = 1;
   sendMsg_IgnitionOn(); // 시작시 시동
   sendMsg_RegBrake_level(RegBrakeLevel);
@@ -85,6 +84,24 @@ on sysvar_update BODY::IGNITIONBUTTON
   }
 }
 
+/*
+on sysvar BODY::CLU_FL{
+  sendMsg_DriveMode(@sysvar::BODY::CLU_FL);
+}
+
+on sysvar BODY::CLU_FR{
+  sendMsg_DriveMode(@sysvar::BODY::CLU_FR);
+}
+
+on sysvar BODY::CLU_RL{
+  sendMsg_DriveMode(@sysvar::BODY::CLU_RL);
+}
+
+on sysvar BODY::CLU_RR{
+  sendMsg_DriveMode(@sysvar::BODY::CLU_RR);
+}
+
+*/
 
 on message StartUp
 {
@@ -167,3 +184,11 @@ void sendMsg_ADSOperation(){
   msg.ADSOperation = 0;
   if(StartUpFlag == 1) output(msg);
 }
+
+/*
+void sendMsg_DriveMode(int ModeStatus){
+  message DriveMode msg;
+  msg.DriveMode.phys = ModeStatus;
+  output(msg);
+}
+*/
