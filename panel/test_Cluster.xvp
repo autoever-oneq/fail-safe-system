@@ -1,10 +1,94 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Panel Type="Vector.CANalyzer.Panels.PanelSerializer, Vector.CANalyzer.Panels.Serializer, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null">
   <Object Type="Vector.CANalyzer.Panels.Runtime.Panel, Vector.CANalyzer.Panels.Common, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="Panel" ControlName="test_Cluster">
+    <Object Type="Vector.CANalyzer.Panels.Design.LCDControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X41cf3737ecec4e47b9ea8c8e96013b2e6804" ControlName="LCD Control 1">
+      <Property Name="Name">X41cf3737ecec4e47b9ea8c8e96013b2e6804</Property>
+      <Property Name="Size">164, 50</Property>
+      <Property Name="Location">134, 264</Property>
+      <Property Name="SymbolConfiguration">8;16;BODY;;;CLUVELOCITY;1;;;-1;;;Value;;;0</Property>
+    </Object>
+    <Object Type="Vector.CANalyzer.Panels.Design.LEDControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X99e14ee9e821ae4c70eacbee24ef252dc614" ControlName="LED Control 7">
+      <Property Name="Name">X99e14ee9e821ae4c70eacbee24ef252dc614</Property>
+      <Property Name="Size">24, 24</Property>
+      <Property Name="Location">684, 445</Property>
+      <Property Name="ReadOnlyControl">True</Property>
+      <Property Name="TabIndex">22</Property>
+      <Property Name="TabStopActive">False</Property>
+      <Property Name="SwitchValuesVTXml">&lt;Version&gt;2&lt;/Version&gt;&lt;Count&gt;2&lt;/Count&gt;&lt;RxValue&gt;0&lt;/RxValue&gt;&lt;LowerUpper&gt;Lower&lt;/LowerUpper&gt;&lt;TxValue&gt;0&lt;/TxValue&gt;&lt;Color&gt;255, 152, 152, 152&lt;/Color&gt;&lt;RxValue&gt;1&lt;/RxValue&gt;&lt;LowerUpper&gt;Lower&lt;/LowerUpper&gt;&lt;TxValue&gt;1&lt;/TxValue&gt;&lt;Color&gt;Red&lt;/Color&gt;</Property>
+      <Property Name="SymbolConfiguration">8;16;BODY;;;CLU_RR;1;;;-1;;;Value;;;0</Property>
+    </Object>
+    <Object Type="Vector.CANalyzer.Panels.Design.LEDControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="Xb754f696e848fe4536ebeb0e83df20f1ec14" ControlName="LED Control 6">
+      <Property Name="Name">Xb754f696e848fe4536ebeb0e83df20f1ec14</Property>
+      <Property Name="Size">24, 24</Property>
+      <Property Name="Location">591, 445</Property>
+      <Property Name="ReadOnlyControl">True</Property>
+      <Property Name="TabIndex">21</Property>
+      <Property Name="TabStopActive">False</Property>
+      <Property Name="SwitchValuesVTXml">&lt;Version&gt;2&lt;/Version&gt;&lt;Count&gt;2&lt;/Count&gt;&lt;RxValue&gt;0&lt;/RxValue&gt;&lt;LowerUpper&gt;Lower&lt;/LowerUpper&gt;&lt;TxValue&gt;0&lt;/TxValue&gt;&lt;Color&gt;255, 152, 152, 152&lt;/Color&gt;&lt;RxValue&gt;1&lt;/RxValue&gt;&lt;LowerUpper&gt;Lower&lt;/LowerUpper&gt;&lt;TxValue&gt;1&lt;/TxValue&gt;&lt;Color&gt;Red&lt;/Color&gt;</Property>
+      <Property Name="SymbolConfiguration">8;16;BODY;;;CLU_RL;1;;;-1;;;Value;;;0</Property>
+    </Object>
+    <Object Type="Vector.CANalyzer.Panels.Design.LEDControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="Xa01c9da4ef62be4115ea0afe38882bd61dd6" ControlName="LED Control 5">
+      <Property Name="Name">Xa01c9da4ef62be4115ea0afe38882bd61dd6</Property>
+      <Property Name="Size">24, 24</Property>
+      <Property Name="Location">684, 362</Property>
+      <Property Name="ReadOnlyControl">True</Property>
+      <Property Name="TabIndex">20</Property>
+      <Property Name="TabStopActive">False</Property>
+      <Property Name="SwitchValuesVTXml">&lt;Version&gt;2&lt;/Version&gt;&lt;Count&gt;2&lt;/Count&gt;&lt;RxValue&gt;0&lt;/RxValue&gt;&lt;LowerUpper&gt;Lower&lt;/LowerUpper&gt;&lt;TxValue&gt;0&lt;/TxValue&gt;&lt;Color&gt;255, 152, 152, 152&lt;/Color&gt;&lt;RxValue&gt;1&lt;/RxValue&gt;&lt;LowerUpper&gt;Lower&lt;/LowerUpper&gt;&lt;TxValue&gt;1&lt;/TxValue&gt;&lt;Color&gt;Red&lt;/Color&gt;</Property>
+      <Property Name="SymbolConfiguration">8;16;BODY;;;CLU_FR;1;;;-1;;;Value;;;0</Property>
+    </Object>
+    <Object Type="Vector.CANalyzer.Panels.Design.LEDControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="Xe556fdb1ec0ede46ace882de394b2cdb730e" ControlName="LED Control 9">
+      <Property Name="Name">Xe556fdb1ec0ede46ace882de394b2cdb730e</Property>
+      <Property Name="Size">24, 24</Property>
+      <Property Name="Location">591, 362</Property>
+      <Property Name="ReadOnlyControl">True</Property>
+      <Property Name="TabIndex">19</Property>
+      <Property Name="TabStopActive">False</Property>
+      <Property Name="SwitchValuesVTXml">&lt;Version&gt;2&lt;/Version&gt;&lt;Count&gt;2&lt;/Count&gt;&lt;RxValue&gt;0&lt;/RxValue&gt;&lt;LowerUpper&gt;Lower&lt;/LowerUpper&gt;&lt;TxValue&gt;0&lt;/TxValue&gt;&lt;Color&gt;255, 152, 152, 152&lt;/Color&gt;&lt;RxValue&gt;1&lt;/RxValue&gt;&lt;LowerUpper&gt;Lower&lt;/LowerUpper&gt;&lt;TxValue&gt;1&lt;/TxValue&gt;&lt;Color&gt;Red&lt;/Color&gt;</Property>
+      <Property Name="SymbolConfiguration">8;16;BODY;;;CLU_FL;1;;;-1;;;Value;;;0</Property>
+    </Object>
+    <Object Type="Vector.CANalyzer.Panels.Design.TextBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="Xf67b59e8e6978e46d7e91a2ebfae352b9540" ControlName="Input/Output Box 4">
+      <Property Name="Name">Xf67b59e8e6978e46d7e91a2ebfae352b9540</Property>
+      <Property Name="Size">216, 21</Property>
+      <Property Name="Location">502, 291</Property>
+      <Property Name="AlarmGeneralSettings">1;2;0;100</Property>
+      <Property Name="AlarmLowerBkgColor">Salmon</Property>
+      <Property Name="AlarmLowerTextColor">Black</Property>
+      <Property Name="AlarmUpperBkgColor">IndianRed</Property>
+      <Property Name="AlarmUpperTextColor">Black</Property>
+      <Property Name="BoxBorderStyle">FixedSingle</Property>
+      <Property Name="DisplayLabel">Left</Property>
+      <Property Name="TabIndex">18</Property>
+      <Property Name="DescriptionText">FLTIREPRESSURE:</Property>
+      <Property Name="ValueDecimalPlaces">0</Property>
+      <Property Name="ValueDisplay">Decimal</Property>
+      <Property Name="UsedValueTable">PhysicalValue</Property>
+      <Property Name="DescriptionSize">107, 21</Property>
+      <Property Name="SymbolConfiguration">8;16;BODY;;;FLTIREPRESSURE;1;;;-1;;;Value;;;0</Property>
+    </Object>
+    <Object Type="Vector.CANalyzer.Panels.Design.TextBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X31e88ac1e2c1be4037eba72ea6541f6b42b0" ControlName="Input/Output Box 3">
+      <Property Name="Name">X31e88ac1e2c1be4037eba72ea6541f6b42b0</Property>
+      <Property Name="Size">184, 21</Property>
+      <Property Name="Location">572, 264</Property>
+      <Property Name="AlarmGeneralSettings">1;2;0;100</Property>
+      <Property Name="AlarmLowerBkgColor">Salmon</Property>
+      <Property Name="AlarmLowerTextColor">Black</Property>
+      <Property Name="AlarmUpperBkgColor">IndianRed</Property>
+      <Property Name="AlarmUpperTextColor">Black</Property>
+      <Property Name="BoxBorderStyle">FixedSingle</Property>
+      <Property Name="DisplayLabel">Left</Property>
+      <Property Name="TabIndex">13</Property>
+      <Property Name="DescriptionText">DRIVEMODE:</Property>
+      <Property Name="ValueDecimalPlaces">0</Property>
+      <Property Name="ValueDisplay">Decimal</Property>
+      <Property Name="UsedValueTable">PhysicalValue</Property>
+      <Property Name="DescriptionSize">75, 21</Property>
+      <Property Name="SymbolConfiguration">8;16;;;;DRIVEMODE;1;;;-1;;;Value;;;0</Property>
+    </Object>
     <Object Type="Vector.CANalyzer.Panels.Design.TrackBarControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X33f48996ef2cee4ffaea06cec29fb38b3bdb" ControlName="Track Bar 1">
       <Property Name="Name">X33f48996ef2cee4ffaea06cec29fb38b3bdb</Property>
       <Property Name="Size">492, 30</Property>
-      <Property Name="Location">158, 330</Property>
+      <Property Name="Location">13, 333</Property>
       <Property Name="TabIndex">12</Property>
       <Property Name="MaximumDouble">1000</Property>
       <Property Name="MinimumDouble">-1000</Property>
@@ -108,7 +192,7 @@
     <Object Type="Vector.CANalyzer.Panels.Design.LEDControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="X31864f6ae5827e40b1eac38eeac6be3afb1f" ControlName="LED Control 1">
       <Property Name="Name">X31864f6ae5827e40b1eac38eeac6be3afb1f</Property>
       <Property Name="Size">58, 58</Property>
-      <Property Name="Location">391, 19</Property>
+      <Property Name="Location">392, 27</Property>
       <Property Name="ReadOnlyControl">True</Property>
       <Property Name="TabIndex">3</Property>
       <Property Name="TabStopActive">False</Property>
@@ -161,7 +245,7 @@
       <Property Name="BorderStyle">FixedSingle</Property>
       <Property Name="BackgroundColor">White</Property>
       <Property Name="ArrowWidth">2</Property>
-      <Property Name="LegendText">km/h</Property>
+      <Property Name="LegendText"></Property>
       <Property Name="LegendTextFont">Microsoft Sans Serif, 8.25pt</Property>
       <Property Name="MainTicksNumber">12</Property>
       <Property Name="CurrentPosition">0</Property>
@@ -169,7 +253,7 @@
       <Property Name="IsFrame">False</Property>
       <Property Name="IsMargin">False</Property>
       <Property Name="ScaleMargin">0</Property>
-      <Property Name="SymbolConfiguration">8;2;BCAN;VCU;FrmVCU_CLU_100ms;CurVelocity;1;CAN;;-1;;;Value;;;0</Property>
+      <Property Name="SymbolConfiguration">8;16;BODY;;;CLUVELOCITY;1;;;-1;;;Value;;;0</Property>
       <Property Name="CriticalProps" Member="AAEAAAD/////AQAAAAAAAAAEAQAAAC9TeXN0ZW0uUmVmbGVjdGlvbi5NZW1iZXJJbmZvU2VyaWFsaXphdGlvbkhvbGRlcgcAAAAETmFtZQxBc3NlbWJseU5hbWUJQ2xhc3NOYW1lCVNpZ25hdHVyZQpTaWduYXR1cmUyCk1lbWJlclR5cGUQR2VuZXJpY0FyZ3VtZW50cwEBAQEBAAMIDVN5c3RlbS5UeXBlW10GAgAAAAUuY3RvcgYDAAAAXFZlY3Rvci5DQU5hbHl6ZXIuUGFuZWxzLkFuYWxvZ0dhdWdlLCBWZXJzaW9uPTE3LjMuOTEuMCwgQ3VsdHVyZT1uZXV0cmFsLCBQdWJsaWNLZXlUb2tlbj1udWxsBgQAAAA2VmVjdG9yLkNBTmFseXplci5QYW5lbHMuRGVzaWduLkdhdWdlQ3JpdGljYWxQcm9wZXJ0aWVzBgUAAAAyVm9pZCAuY3RvcihEb3VibGUsIERvdWJsZSwgRG91YmxlLCBEb3VibGUsIERvdWJsZSkGBgAAAFAuY3RvcihTeXN0ZW0uRG91YmxlLCBTeXN0ZW0uRG91YmxlLCBTeXN0ZW0uRG91YmxlLCBTeXN0ZW0uRG91YmxlLCBTeXN0ZW0uRG91YmxlKQEAAAAKCw==">
         <Argument>0</Argument>
         <Argument>250</Argument>

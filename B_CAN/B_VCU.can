@@ -171,46 +171,40 @@ on sysvar_update BODY::BRAKEINPUT
   sendMsg_BrakeInputFlag(@sysvar::BODY::BRAKEINPUT);  
 }
 
-/*
-on sysvar_update DRIVEMODE{
-  sendMsg_DriveMode(@sysvar::DRIVEMODE);
-  sendMsg_PcanModeStatus_func(@sysvar::DRIVEMODE);
-}
-*/
 
-on message CautionTurnInput
+on message Bcan::CautionTurnInput
 {
   sendMsg_CautionLampControl(this.CautionTurnSignal);  
 }
 
-on message LeftTurnInput
+on message Bcan::LeftTurnInput
 {
   sendMsg_LeftTurnSignalControl(this.LeftTurnInputSignal);  
 }
 
-on message RightTurnInput
+on message Bcan::RightTurnInput
 {
   sendMsg_RightTurnSignalControl(this.RightTurnInputSignal);  
 }
 
-on message IgnitionOn 
+on message Bcan::IgnitionOn 
 {
   StartUpFlag = this.IgnitionFlag;
   sendMsg_StartUp(this.IgnitionFlag);
 }
 
-on message RegBrake_level{
+on message Bcan::RegBrake_level{
   regen_brake_level = this.RegBrake_Level;
 }
 
-on message TirePressureAlert{
+on message Bcan::TirePressureAlert{
   if (this.TireAlertFlag == 1){
     sendMsg_DriveMode(EMERGENCY_MODE);
     sendMsg_PcanModeStatus_func(EMERGENCY_MODE);
   }
 }
 
-on message TireCautionAlert{
+on message Bcan::TireCautionAlert{
   if (this.TireCautionAlertFlag == 1){
     sendMsg_DriveMode(CAUTION_MODE);
     sendMsg_PcanModeStatus_func(CAUTION_MODE);
@@ -357,7 +351,12 @@ void sendMsg_FrmVCU_CLU_100ms()
 void sendMsg_FrmPCAN_CLU_500ms()
 {
   message FrmPCAN_CLU_500ms msg;
-  msg.Regen_Brake_Status.phys = (brake_status == 2) ? 0 : 1;
+  if ((brake_status == 2) || (brake_pedal_active == 0)){
+    msg.Regen_Brake_Status.phys = 0;
+  }
+  else {
+    msg.Regen_Brake_Status.phys = 0;
+  }
   msg.Battery_Output_Limit.phys = output_limit;
   msg.BatterySOC.phys = battery_soc / 100;
   msg.BatteryTemp.phys = battery_temp;
@@ -375,11 +374,6 @@ void sendMsg_DriveMode(int STATUS){
   message DriveMode msg;
   msg.DriveMode.phys = STATUS;
   output(msg); 
-}
-
-void Calculate_CurVelocity(){
-  CurVelocity = (3600 *0.677 * pi * motor_rpm) / (60 * 10 * 1000);
-  //3600 : 한시간 당 초 0.677 : 18인치 휠 지름 60 : 초당 rpm을 분으로 환산 1000 : 킬로미터 당 미터 
 }
 
 /*-----------------------------------BCAN Functions-----------------------------------*/
@@ -531,6 +525,7 @@ void sendMsg_MCURpmLimit_func(void)
 
 void TransmitCarSpeed(void){ // 20ms rpm -> 속도 변환
  cur_motor_speed = convertRPMtoSpeed(motor_rpm); // 현재 속도
+  write("%d",cur_motor_speed);
  next_motor_speed = convertRPMtoSpeed(motor_rpm - regen_motor_rpm + rpm_increase) ; // 다음 속도
   // write("%d %d %d -%d +%d", cur_motor_speed, next_motor_speed , motor_rpm, regen_motor_rpm ,rpm_increase);
 }

@@ -16,7 +16,7 @@ on start{
   @sysvar::BODY::RIGHTBUTTON = 0;
 }
 
-on key 'q'
+on key 'p'
 {
   if (@sysvar::BODY::CAUTIONBUTTON == 0) {
     @sysvar::BODY::CAUTIONBUTTON = 1;
@@ -26,7 +26,7 @@ on key 'q'
   }
 }
 
-on key 'a'
+on key 'j'
 {
   if (@sysvar::BODY::LEFTBUTTON == 0) {
     @sysvar::BODY::LEFTBUTTON = 1;
@@ -37,7 +37,7 @@ on key 'a'
   }
 }
 
-on key 'd'
+on key 'l'
 {
   if (@sysvar::BODY::RIGHTBUTTON == 0) {
     @sysvar::BODY::LEFTBUTTON = 0;
@@ -48,22 +48,22 @@ on key 'd'
   } 
 }
 
-on key 's'
+on key 'k'
 {
   @sysvar::BODY::FLTIREPRESSURE -= 100;
 }
 
-on key 'w'
+on key 'i'
 {
   @sysvar::BODY::FLTIREPRESSURE += 100;
 }
 
-on key 'l'
+on key 'm'
 {
   @sysvar::BODY::FLTIREPRESSURE = 200;
 }
 
-on key 'b'
+on key 'h'
 {
   if (@sysvar::BODY::BRAKEINPUT == 0) {
     @sysvar::BODY::BRAKEINPUT = 1;
@@ -73,7 +73,7 @@ on key 'b'
   } 
 }
 
-on key 'z'
+on key 'u'
 {
   message DriveMode msg;
   DMode++;
