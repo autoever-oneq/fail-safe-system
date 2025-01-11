@@ -6,16 +6,16 @@ includes
 
 variables
 {
-  msTimer SbWA0_T;
+  msTimer SbWA1_T;
   timer Reset_T;
   byte TimerCounter=0;
   byte CommandLost=0;
   
   // VCU's
-  byte ecuisPrimary=1;
+  byte ecuisPrimary=0;  
   byte SbWS_Machinstate =0;
   word ecuStatusMsgCnt =0;
-  byte primaryBus =1;
+  byte primaryBus =5;
   byte is_off =0 ;
   
   
@@ -26,30 +26,40 @@ variables
   byte HardResetSig; // 1 to reset
   byte isHealthyBus; // 0(none),1,2,3(both)
   
-  int wheelSpeed=0;
+  
   
   // Self Data
-  int steerFeedbackAngle;
+  float steerFeedbackAngle;
   
   
   // Actuator info
   byte PrimaryAct; // 0 or 1
-  int SteerFeedback;
+  float SteerFeedback;
   
   
-  byte error=0;
+  
+  
+  enum MalfunctionState {
+    MALFUNCTION_NONFAULT,
+    MALFUNCTION_TRANSCEIVER_ERR,
+    MALFUNCTION_LOGIC_ERR
+  };
+  
+  byte error=MALFUNCTION_NONFAULT;
   
 }
 
 on start{
- setTimerCyclic(SbWA0_T,10); 
+ setTimerCyclic(SbWA1_T,10); 
   
 }
 
 on timer Reset_T{
   is_off = 0;
   
-  ecuisPrimary=0;
+  error=MALFUNCTION_NONFAULT;
+  
+  ecuisPrimary=0;  // start with Act 0 Primary
   SbWS_Machinstate =0;
   ecuStatusMsgCnt =0;
   primaryBus =0;
@@ -60,12 +70,14 @@ on timer Reset_T{
   CommandLost =0;
 }
 
-on timer SbWA0_T{
+on timer SbWA1_T{
   if(!is_off){ // 10ms Task
     TimerCounter++;
     CommandLost++;
-    if(CommandLost >=2){
-      //error 
+    if(CommandLost >=3){
+      is_off=1;
+      setTimer(Reset_T,3);
+      // Didn't reciecve any Control messages from Both Sensor 3 Times -> reboot
     }
     TransmitStatus();
   
@@ -74,40 +86,43 @@ on timer SbWA0_T{
       TransmitSteerActFailStatus();
       TimerCounter=0;
      }
-  
   }
 }
 
 on message SetSteer{
-  if (this.SetPrimaryActuatorSteer){
-   // A0 is Primary
-    ecuisPrimary=1;
-  }
-  else{
-    ecuisPrimary=0;
-  }
+  if(error==MALFUNCTION_LOGIC_ERR)
+    return;
+  
+  if(error==MALFUNCTION_TRANSCEIVER_ERR)
+    return;
+  
+  ecuisPrimary = this.SetPrimaryActuatorSteer ? 1 : 0;
 }
 
 on message CommandResetSteer{
+  if(error==MALFUNCTION_TRANSCEIVER_ERR)
+    return;
   if(this.HardResetSbWA0){
-    is_off =1;
-    setTimer(Reset_T,3);
+    HardReset();
   }
 }
 
 on message SteerCommand0{
-  steerFeedbackAngle= this.SteerAngle;
+  ActuateSteer(this.SteerAngle);
   CommandLost =0;
 }
 
 on message SteerCommand1{
-  steerFeedbackAngle= this.SteerAngle;
-  CommandLost =0;
+  ActuateSteer(this.SteerAngle);
+  CommandLost =0;   
 }
 
 
 
 on message CANHealthyCheck{
+  if(error==MALFUNCTION_TRANSCEIVER_ERR)
+    return;
+  
  if(!this.CAN1Healthy){
    if(!this.CAN2Healthy){
       primaryBus = 0; 
@@ -126,9 +141,27 @@ on message CANHealthyCheck{
 }
 
 
+void ActuateSteer(long CmdAngle){
+  if(error==MALFUNCTION_LOGIC_ERR){
+    SbWA_FailCount++;
+    SbWA_FailInfo = MALFUNCTION_LOGIC_ERR;
+    return;
+  }
+  steerFeedbackAngle= CmdAngle;
+  
+}
+
+void HardReset(){
+ is_off =1;
+ setTimer(Reset_T,3); 
+}
+
 
 
 void Transmit(message * msg) {
+  if(error==MALFUNCTION_TRANSCEIVER_ERR)
+    return;
+  
   if(primaryBus==3) {
     msg.can=1;
     output(msg);
@@ -154,20 +187,16 @@ void TransmitStatus(){
 
 void TransmitSteerFeedback(){
   if( ecuisPrimary){
-  message SteerFeedback1 feedback;
+  message SteerFeedback0 feedback;
   feedback.SteerFeedbackAngle.phys = steerFeedbackAngle;
   Transmit(feedback);
   }
 }
 
 void TransmitSteerActFailStatus(){
-  message SteerActuator1FailStatus Failstatus;
+  message SteerActuator0FailStatus Failstatus;
   Failstatus.SbWA_FailCount = SbWA_FailCount;
   Failstatus.SbWA_FailInfo = SbWA_FailInfo;
   Transmit(Failstatus);  
 }
 
-
-on message 0x500{
- SbWA_FailCount ++;
-}
