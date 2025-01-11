@@ -284,6 +284,7 @@ on message Pcan::BatteryMonitoring0
       output_limit = 0;
       mode_status = 0;
     }
+    battery_hvac = battery_temp < 20 ? 2 : battery_temp > 40 ? 1 : 0;
   }
 }
 
