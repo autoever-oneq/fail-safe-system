@@ -6,12 +6,6 @@ includes
 
 variables
 {
-  enum mode{
-    NORMAL = 0,
-    CAUTION,
-    EMERGENCY
-  };
-  
   msTimer counter_10ms;
   int cnt = 0;
   
@@ -21,12 +15,8 @@ variables
   int natural_decel = 10;
   
   int motor_rpm = 0;           // 현재 motor RPM
-  int output_limit = 0;        // 출력 제한
   int limit_motor_rpm = MAX_RPM;
-  
-  char mcu_alive_flag = 0; 
-  
-  int mode_status = NORMAL;     
+    
   int delta_rpm_emergency = 0;  
   int regen_motor_rpm = 0;      // 회생제동 임시 변화량
   char pcan_healty_check = 0;   // PCAN ECU 고장 확인
@@ -36,6 +26,15 @@ variables
   char brake_pedal_active = 0;  // 브레이크 페달 밟았는지
   
   int delta_rpm = 0; // 임시 변화량
+  
+  // ECU 정상 상태 flag (0, 1)
+  char alive_flag = 1;
+  
+  // 주행 상태 flag (0 : 일반, 1 : 주의, 2 : 긴급)
+  char mode_status;
+  
+  // 배터리 상태(온도, SOC)에 따른 MCU 출력 제한 flag (0 : 평시 상태, 1 : 출력 제한 상태)
+  char output_limit;
 }
 
 void RPMtoVCU(void)
@@ -59,7 +58,7 @@ on timer counter_10ms // VCU에 RPM 보내기, 긴급모드에도 보내기
   RPMcal(); // 10ms RPM 계산
   
   ++cnt;
-  if(cnt % 3 == 0) { // 30ms 주기
+  if(cnt % 2 == 0) { // 10ms 주기
     RPMtoVCU(); 
   }
   
@@ -72,21 +71,20 @@ on timer counter_10ms // VCU에 RPM 보내기, 긴급모드에도 보내기
 */
 on message PCAN::PcanModeStatus
 {
-  if(mode_status != EMERGENCY){
+  if(mode_status != 2){
     mode_status = this.Mode_Status.phys;
   }
   
-  if(mode_status == EMERGENCY){ 
-    // 10초를 30ms로 나누면 33번정도(990ms)
-    delta_rpm_emergency = motor_rpm / 33;
+  if(mode_status == 2){ 
+    // 10초를 20ms로 나누면 500번정도(10000ms)
+    delta_rpm_emergency = motor_rpm > 1000 ? motor_rpm / 100 : 10;
   }
-  
 }
 
 // VCU에서 받은 RPM 업데이트
 on message PCAN::MotorRpmUpdate 
 {
-  if(mode_status != EMERGENCY) // 긴급모드가 아니라면
+  if(mode_status != 2) // 긴급모드가 아니라면
   {
     delta_rpm = this.Motor_RPM.phys;
   }
@@ -95,7 +93,7 @@ on message PCAN::MotorRpmUpdate
 // 회생제동으로 감소시킬 모터RPM 량
 on message PCAN::RegenToMcu
 {
-  if(mode_status != EMERGENCY)
+  if(mode_status != 2)
   {
     regen_motor_rpm = this.Regen_Motor_RPM.phys; 
   }
@@ -104,10 +102,10 @@ on message PCAN::RegenToMcu
 // MCU 살아있는지
 on message PCAN::PcanHealthyCheck
 {
-  if(mode_status != EMERGENCY) // 긴급모드가 아니라면
+  if(mode_status != 2) // 긴급모드가 아니라면
   {
     message MCUAlive msg;
-    msg.MCU_Alive_Flag = 1;
+    msg.MCU_Alive_Flag = alive_flag;
     output(msg);
   }
 }
@@ -115,23 +113,16 @@ on message PCAN::PcanHealthyCheck
 // 주의 모드 -> 모터 출력 제한
 on message PCAN::MCURpmLimit
 {
-  if(mode_status != EMERGENCY)        // 긴급모드가 아니라면
+  if(mode_status != 2)        // 긴급모드가 아니라면
   {
     output_limit = this.Output_Limit.phys;
-    
-    if(output_limit == 1)             // 주의모드 출력 제한 : MAX_RPM *0.7
-    {
-     limit_motor_rpm = MAX_RPM * 0.7;
-    }else {
-     limit_motor_rpm = MAX_RPM;
-    }
   }
 }
 
 // 브레이크 밟았을 때
 on message PCAN::BasicBrakeReq
 {
-  if(mode_status != EMERGENCY) // 긴급모드가 아니라면
+  if(mode_status != 2) // 긴급모드가 아니라면
   {
     brake_pedal_active = this.Brake_Pedal_Active.phys;
   }
@@ -141,7 +132,7 @@ on message PCAN::BasicBrakeReq
 on message PCAN::AccelPedalState 
 {
     
-  if(mode_status != EMERGENCY) // 긴급모드가 아니라면
+  if(mode_status != 2) // 긴급모드가 아니라면
   {
     accel_pedal_position = this.Accel_Pedal_Position.phys;
     accel_pedal_active = this.Accel_Pedal_Position_Flag.phys;
@@ -158,7 +149,7 @@ on message PCAN::AccelPedalState
 
 void RPMcal(){
   
-  if(mode_status == EMERGENCY) // 긴급 모드 : 10초내에 속도 멈춤
+  if(mode_status == 2) // 긴급 모드 : 10초내에 속도 멈춤
   {
      motor_rpm -= delta_rpm_emergency;
   } 
@@ -188,21 +179,24 @@ void RPMcal(){
     }
     else if (accel_pedal_active == 0 && brake_pedal_active == 0) // accel : 0, brake : 0 -> 자연 감속 + 회생제동 
     {
-    
       motor_rpm -= ( regen_motor_rpm + natural_decel);
     }
     else // accel : 1, brake : 1 -> brake 우선 순위
     {
       motor_rpm -= regen_motor_rpm;
     }
-       
   }
   
-  if(motor_rpm >= limit_motor_rpm) 
-    motor_rpm = limit_motor_rpm;
+  if(motor_rpm > 11000)
+    motor_rpm = 11000;
   
   // 음수 방지
   if(motor_rpm < 0) 
     motor_rpm = 0;
-  
+}
+
+/* Test */
+on key ']'
+{
+  alive_flag ^= 1;
 }
