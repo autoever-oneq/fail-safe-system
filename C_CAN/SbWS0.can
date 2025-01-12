@@ -11,7 +11,7 @@ variables
   byte is_off=0;
   
   // VCU's
-  byte ecuisPrimary=0;
+  byte ecuisPrimary=1;
   byte SbWS_Machinstate =0;
   word ecuStatusMsgCnt =0;
   byte primaryBus =5;
@@ -25,15 +25,35 @@ variables
   int wheelSpeed=0;
   
   // Self Data
+  
+  enum HealthyCan{
+    NONE,
+    BUS1,
+    BUS2,
+    BOTH
+  };
+  
+  enum SteerOutRange{
+    IN,
+    OUT
+  };
+  byte isDriverCmdOk=0;
+  
   byte isPrimary=0;
   byte MachineState=0;
   
   long SteerDriverAngle=0;
-  long SteerDriverAngle_before=0;
   int SteerDriverTorque=0;
   
-  float SteerAngle=0;
-  float SteerAngleBefore=0;
+  long _100xSteerAngle=0;  //updated Angle;
+  long _100xSteerAngleBefore=0; //currernt Angle
+  long targetAngle =0; 
+  long restoreAngle;
+  
+  
+  
+  
+  
   int SteerWheelTorque=0;
   byte SteerConnectionState=0;
   int carspeed=0;
@@ -67,6 +87,7 @@ on start
 on timer Reset_T{
   is_off=0;
   ecuisPrimary =1;
+  isPrimary =0;
   SbWS_Machinstate =0;
   ecuStatusMsgCnt =0;
   primaryBus =1;
@@ -74,61 +95,53 @@ on timer Reset_T{
   SbWS_FailInfo=0;
 }
 
-on message CCAN1::DriveModeStatus{
+on message DriveModeStatus{
   modeState = this.ModeState;
     if (modeState == 0) {
-
+        //Normal
     } 
     else if (modeState == 1) { 
-    
+        //caution
     } 
     else if (modeState == 2) {
-    
+        // Emergency
     } 
     else {
-    
+        // 
     }
 }
 
-on sysvar_update Chassis::DriverSteerAngle{
-  SteerDriverAngle= @sysvar::Chassis::DriverSteerAngle;
-}
+
 
 on message SetSteer{
-   if(MachineState == !MALFUNCTION_TRANSCEIVER_ERR){
-  if(this.SetPrimarySensorSteer){
-    isPrimary=0;
-    SteerConnectionState=1;
-    //for S1
-  }
-  else{
-    isPrimary=1;
-    SteerConnectionState=1;
-   //for S0
-  }
-   }
+   if(MachineState == MALFUNCTION_TRANSCEIVER_ERR)
+     return;
+  isPrimary = (this.SetPrimarySensorSteer) ? 0 : 1 ;
+  SteerConnectionState=1;
 }
 
 on message PowertrainStatus{
-   if(MachineState == !MALFUNCTION_TRANSCEIVER_ERR){
+   if(MachineState ==MALFUNCTION_TRANSCEIVER_ERR){
+     return;
  carspeed=this.VehicleSpeed; 
    }
 }
 
 on message SbWA0_Status{
-   if(MachineState == !MALFUNCTION_TRANSCEIVER_ERR){
+   if(MachineState == MALFUNCTION_TRANSCEIVER_ERR)
   if(this.EcuIsPrimary == 0){
    PrimaryAct=1; 
-  } 
    }
 }
 
 on message SbWA1_Status{
-   if(MachineState == !MALFUNCTION_TRANSCEIVER_ERR){
+   if(MachineState == MALFUNCTION_TRANSCEIVER_ERR)
+     return;
+     
   if(this.EcuIsPrimary == 0){
    PrimaryAct=0; 
-  } 
-}
+  }
+
 }
 
 
@@ -136,136 +149,122 @@ on message SbWA1_Status{
 on message CommandResetSteer{
    if(MachineState == !MALFUNCTION_TRANSCEIVER_ERR){
   if(this.HardResetSbWS0){
-      is_off = 1;
-    setTimer(Reset_T, 3);
+    HardReset();
  }
    }
 }
 
-/*
+
 on message CANHealthyCheck{
    if(MachineState == !MALFUNCTION_TRANSCEIVER_ERR){
- if(!this.CAN1Healthy){
-   if(!this.CAN2Healthy){
-      primaryBus = 0; 
-    }
+      if(this.CAN1Healthy){
+        primaryBus =BUS1;   
+        if(this.CAN2Healthy){
+            primaryBus = BOTH; 
+          }
+        }
     else{
-      primaryBus =6;   
-    }
- }
- else{
-     primaryBus = 5;    
-   
- }
+      primaryBus =BUS2; 
+      if(!this.CAN2Healthy)
+        primaryBus = NONE;
+      }
    }
 }
-*/
 
 on message SteerFeedback0{
   if(MachineState == !MALFUNCTION_TRANSCEIVER_ERR){
     
     if (PrimaryAct == 0){
-        if(SteerAngle != this.SteerFeedbackAngle){
+        if(_100xSteerAngle != this.SteerFeedbackAngle){
           
     }
     }
   }
   }
 
+ //    if(isHandleOn){ // check Val of Steer switchPannel
+on sysvar Chassis::DriverSteerAngle{
+      
+  if(isHandleOn){
+    SteerDriverAngle= @sysvar::Chassis::DriverSteerAngle;
+    
+    targetAngle = (SteerDriverAngle*100)/15;
+    
+    if(carspeed>=80){
+      if (abs(targetAngle) > 1000) {
+        targetAngle= (targetAngle < 0) ? -1000 : 1000; 
+      } 
+    }
+  else if(carspeed <80 && carspeed >=40){
+    if (abs(targetAngle) > 2000) {
+        targetAngle= (targetAngle < 0) ? -2000 : 2000; 
+      } 
+    }
+    else{
+      if (abs(targetAngle) > 6000) {
+        targetAngle= (targetAngle < 0) ? -6000 : 6000; 
+      } 
+    }
+}
+}
 
+//   }
+  
+  
 on timer SbWS_timer
 {
   if(!is_off){
-    
+  
     if(isHandleOn){
-      //SteerDriverAngle은 시스템변수로 최신화  
-      SteerAngle = CalcAngle(SteerAngleBefore, SteerDriverAngle, carspeed);
-      SteerDriverAngle=SteerAngle*16;
-      SteerAngleBefore=SteerAngle;
-
-      @sysvar::Chassis::DriverSteerAngle =SteerDriverAngle;
+      CalcAngle();
     }
+
+    
     else{
-      //isHandle Off
-      SteerAngle-=CalcRestoreAngle(SteerAngle,carspeed); // 스티어휠을 가운데로 속도를 고려하여 복원
-      SteerDriverAngle=SteerAngle*16;
+      
+      if(abs(SteerDriverAngle) >abs( (_100xSteerAngle * 15)/100 )){
+        SteerDriverAngle -= (SteerDriverAngle > 0) ? 10 : -10;
+        if(abs (SteerDriverAngle) - abs( (_100xSteerAngle * 15)/100 ) <=10 ) {
+          SteerDriverAngle = (_100xSteerAngle * 15) /100 ;
+        }
+      }   //10도씩 줄이다가 실제 휠 조향 각과 매치되면 그 때 부턴 조향각 복원 로직을 따름
+      
+      else{
+      restoreAngle = CalcRestoreAngle(_100xSteerAngle, carspeed);
+        _100xSteerAngle += restoreAngle;
+        SteerDriverAngle = (_100xSteerAngle * 15) /100;
+        _100xSteerAngleBefore=_100xSteerAngle;
+        targetAngle=0;
       
     }
-  TransmitSteerCommand0();
-  TransmitDriverStatus0();
-  TransmitSensor0FailStatus();
-  TransmitStatus();
+    @sysvar::Chassis::DriverSteerAngle =SteerDriverAngle;
+     }
+    
+    if(isPrimary)
+      TransmitSteerCommand0(); // 액츄에이터에 연산 결과(조향각) 송신
+    
+    TransmitDriverStatus0();
+    TransmitSensor0FailStatus();
+    TransmitStatus();
   }
 }
 
 
-float pow(float base, float exponent) {
-    
-    int i;
-    if (base < 0 && (exponent - (int)exponent) != 0) { //negative return 0
-        return 0.0;
-    }
-
-    if (base == 0 && exponent <= 0) { // zerobase return 0
-        return 0.0;
-    }
-
-    if (exponent == 0) { 
-        return 1.0;
-    }
-    if (exponent < 0) {
-        return 1.0 / pow(base, -exponent);
-    }
-    
-    
-    
-  if ((exponent - (int)exponent) == 0) { // 정수 지수 확인
-        float result = 1.0;
-        for (i = 0; i < (int)exponent; i++) {
-            result *= base;
-        }
-        return result;
-    }
-
-    // 비정수 지수 처리: base^exponent = exp(exponent * ln(base))
-    return exp(exponent * logApprox(base)); // 로그 근사값으로 사용
-}
-
-// 근사된 로그 함수 구현
-float logApprox(float x) {
-  float estimate;
-  float diff;
-  float tolerance;
-    if (x <= 0) {
-        return 0.0;
-    }
-
-    // 로그 근사값 계산을 위한 초기 값
-    estimate = x - 1;  // 초기 추정 값
-    tolerance = 0.0001;  // 허용 오차
-    diff = 1.0;
-
-    // 뉴턴-랩슨 방법으로 근사 계산
-    while (abs(diff) > tolerance) {
-        diff = (x - exp(estimate)) / x;  // 로그 근사를 위한 차이 계산
-        estimate = estimate + diff;
-    }
-
-    return estimate;
-}
-
-
-
-float CalcRestoreAngle(float theta, float speed) {
-    float k = 0.05; // 복원 강도 계수 (조정 가능)
-    float max_restore = 0.2; // 20ms당 최대 변화량 (1초당 10도)
-    float alpha = 0.5; // 비선형 복원 지수 (0 < alpha < 1)
+long CalcRestoreAngle(long _100xtheta, int speed) {
+  
+    float k;                      // 복원 강도 계수
+    float max_restore = 0.2;       // 20ms당 최대 변화량
+    float alpha = 0.5;             // 복원 강도 지수
+    float theta; // 각도를 1도 단위로 변환
     float delta_theta;
-    // 정지 상태에서는 복원 없음
-    if (speed <= 0) return 0.0;
+    theta = _100xtheta / 100.0;
+    k = calc_K(); // 속도에 따른 복원 강도 계산
 
-    // 복원 각도 변화량 계산
-    delta_theta = k * pow(abs(theta), alpha);
+    // 정지 상태에서는 복원 없음
+    if (speed <= 0) return 0;
+
+    // 복원 각도 변화량 계산 (로그 스케일을 사용하여 천천히 복원)
+    delta_theta = k * mypow(myabs(theta), alpha);
 
     // 최대 변화량 제한
     if (delta_theta > max_restore) {
@@ -273,41 +272,161 @@ float CalcRestoreAngle(float theta, float speed) {
     }
 
     // 부호에 따라 복원 각도 조정
-    delta_theta *= (theta > 0) ? -1 : 1;
+    if (theta > 0) {
+        delta_theta = -delta_theta; // 양수일 경우 복원 각도는 음수로
+    }
+    else {
+        delta_theta = delta_theta;  // 음수일 경우 복원 각도는 양수로0
+    }
 
     // 0에 가까워질 경우 0으로 고정
-    if (abs(theta) < delta_theta) {
+    if (myabs(theta) < delta_theta) {
         delta_theta = -theta; // 남은 각도만큼만 복원
     }
-
-    return delta_theta;
+    return (long)(delta_theta * 100.0); // 결과를 다시 _100 단위로 변환
+  
 }
 
-float CalcAngle(float theta_bf,int driver_angle,int speed) {
+float myexp(float x) {
+  float result;
+  float term;
+  float tolerance;
+  int n;
+    // 간단한 근사를 위해 첫 번째 항만 사용
+    if (x > 2.0 || x < -2.0) {
+        // 큰 값일 경우에는 직접 계산을 하지 않고 빠르게 근사값 반환
+        return 1.0 + x + (x * x) / 2.0;  // x^1 / 1! + x^2 / 2! 정도로 간단히 근사
+    }
+
+    // 테일러 급수의 첫 몇 항만 사용하여 근사
+    result = 1.0;
+    term = x;
+    tolerance = 1e-6; // 오차 허용 범위
+
+    for (n = 2; myabs(term) > tolerance; n++) {
+        result += term;
+        term *= x / n;  // x^n / n!
+    }
+    return result;
+}
+
+float mypow(float base, float exponent) {
+    int i;
+    if (base < 0 && (exponent - (int)exponent) != 0) { //negative return 0
+        return 0.0;
+    }
+    if (base == 0 && exponent <= 0) { // zerobase return 0
+        return 0.0;
+    }
+    if (exponent == 0) {
+        return 1.0;
+    }
+    if (exponent < 0) {
+        return 1.0 / mypow(base, -exponent);
+    }
+
+    if ((exponent - (int)exponent) == 0) { // 정수 지수 확인
+        float result = 1.0;
+        for (i = 0; i < (int)exponent; i++) {
+            result *= base;
+        }
+        return result;
+    }
+    // 비정수 지수 처리: base^exponent = exp(exponent * ln(base))
+
+    return myexp(exponent * logApprox(base)); // 로그 근사값으로 사용
+}
+
+float logApprox(float x) {
+    float estimate;
+    float diff;
+    float tolerance;
+    if (x <= 0) {
+        return 0.0;
+    }
+
+    // 로그 근사값 계산을 위한 초기 값
+    estimate = x - 1;  // 초기 추정 값
+    tolerance = 0.001;  // 허용 오차
+    diff = 1.0;
+
+    // 뉴턴-랩슨 방법으로 근사 계산
+    while (myabs(diff) > tolerance) {
+        diff = (x - myexp(estimate)) / x;  // 로그 근사를 위한 차이 계산
+        estimate = estimate + diff;
+    }
+    return estimate;
+}
+
+
+float myabs(float x) {
+    if (x == 0)
+        return 0.0;
+
+    else
+        return x= (x > 0) ? x : x * (-1);
+
+}
+
+
+float calc_K() {
+  
+    // 속도에 따른 k 값 계산 (0.01 ~ 0.07)
+    float k;
+    k= 0.0005 * carspeed + 0.01;
+
+    // k가 범위를 벗어나지 않도록 제한
+    if (k > 0.07) k = 0.07;
+    if (k < 0.01) k = 0.01;
+    return k;
+}
+
+void CalcAngle() {
+  float theta_bf;
   float theta;
-  theta=driver_angle/16;
-    if (speed >= 40 && speed < 80) {
+  
+  
+  
+  theta_bf=_100xSteerAngleBefore;
+    if (carspeed >= 40 && carspeed < 80) {
+        if(abs(targetAngle)>2000)
+            targetAngle = abs(targetAngle)>2000 ? 2000 : -2000;
+      
         // 20ms당 변화량이 0.2도를 넘지 않도록 제한
-        if (abs(theta - theta_bf) > 0.1) {
-            theta = (theta > theta_bf) ? theta_bf + 0.2 : theta_bf - 0.2;
+        if (abs(targetAngle - theta_bf) > 20) {
+            theta = (targetAngle > theta_bf) ? theta_bf + 15 : theta_bf - 15;
+        }     
+        
+        else{
+         theta = targetAngle; 
         }
-        //최대 조향 각도가 20을 넘지 않도록 함.
-        if (abs(theta) > 20) {
-            theta = (theta < 0) ? -20 : 20; 
-        }
-    } else if (speed >= 80) {
+        
+    } 
+    else if (carspeed >= 80) {
+        if(abs(targetAngle)>1000)
+            targetAngle = abs(targetAngle)>1000 ? 1000 : -1000;
+      
         // 20ms당 변화량이 0.1도를 넘지 않도록 제한
-        if (abs(theta - theta_bf) > 0.1) {
-            theta = (theta > theta_bf) ? theta_bf + 0.1 : theta_bf - 0.1;
+        if (abs(targetAngle - theta_bf) > 10) {
+            theta = (targetAngle > theta_bf) ? theta_bf + 7: theta_bf - 7;
         }
-        // 최대 조향 각도가 10도를 넘지 않도록 제한
-        if (abs(theta) > 10) {
-            theta = (theta < 0) ? -10 : 10;
+        else{
+         theta = targetAngle; 
         }
     }
-    return theta;
+    
+      else{
+         theta = targetAngle; 
+        }
+    _100xSteerAngle=theta;
+    _100xSteerAngleBefore=_100xSteerAngle;
 }
 
+
+void HardReset(){
+ is_off =1;
+ setTimer(Reset_T,3); 
+}
 
 
 void Transmit(message * msg) {
@@ -321,7 +440,7 @@ void Transmit(message * msg) {
       }
   else
   {
-    msg.can=primaryBus;
+    msg.can=5;
     output(msg);
   }
 }
@@ -334,7 +453,7 @@ void TransmitStatus(){
   status.PrimaryBus.phys=primaryBus;
   Transmit(status);
   if(!MALFUNCTION_TRANSCEIVER_ERR)
-  ecuStatusMsgCnt++;
+    ecuStatusMsgCnt++;
 }
 
   
@@ -344,6 +463,7 @@ void TransmitStatus(){
    DriverState.SteerDriverTorque.phys =SteerDriverTorque;
    
    Transmit(DriverState);
+   
  }
  
  void TransmitSensor0FailStatus(){
@@ -354,24 +474,36 @@ void TransmitStatus(){
  } 
 
 void TransmitSteerCommand0(){
-  if(ecuisPrimary){
+  if(isPrimary){
   message SteerCommand0 cmd;
-  cmd.SteerAngle.phys = SteerAngle;
+  cmd.SteerAngle.phys = _100xSteerAngle;
   cmd.SteerWheelTorque.phys=SteerWheelTorque;
   cmd.SteerConnectionState.phys = SteerConnectionState;
+  write("Current Speed : %d, Steer Angle : %d, Driver Angle : %d \n" ,carspeed,_100xSteerAngle,SteerDriverAngle);
   Transmit(cmd);
   }
 }
 
-on message 0x500{
-  MachineState = MALFUNCTION_NONFAULT;
+
+on key 'l' {
+  if(isPrimary){
+ isHandleOn = !isHandleOn;
+    write("isHandle: %d",isHandleOn);
+  }
+}
+on key 'w'{
+  carspeed+=10;
+  write("speed : %d",carspeed);
+}
+on key 's'{
+  carspeed-=10;
+    write("speed : %d",carspeed);
 }
 
-on message 0x501{
-  MachineState = MALFUNCTION_TRANSCEIVER_ERR;
+on key 'c'{
+  isPrimary = !isPrimary;
+      _100xSteerAngle=@sysvar::Chassis::WheelAngle;
+    SteerDriverAngle=@sysvar::Chassis::DriverSteerAngle;
+        _100xSteerAngleBefore=_100xSteerAngle;
+  
 }
-
-on message 0x502{
-  MachineState = MALFUNCTION_LOGIC_ERR;
-}
-

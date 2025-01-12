@@ -17,7 +17,7 @@ variables
   word ecuStatusMsgCnt =0;
   byte primaryBus =5;
   byte is_off =0 ;
-  
+  byte isPrimary=0;
   
   byte SbWA_FailCount;
   byte SbWA_FailInfo;
@@ -44,7 +44,12 @@ variables
     MALFUNCTION_TRANSCEIVER_ERR,
     MALFUNCTION_LOGIC_ERR
   };
-  
+   enum HealthyCan{
+    NONE,
+    BUS1,
+    BUS2,
+    BOTH
+  };
   byte error=MALFUNCTION_NONFAULT;
   
 }
@@ -60,6 +65,8 @@ on timer Reset_T{
   error=MALFUNCTION_NONFAULT;
   
   ecuisPrimary=0;  // start with Act 0 Primary
+  
+  isPrimary=0;
   SbWS_Machinstate =0;
   ecuStatusMsgCnt =0;
   primaryBus =0;
@@ -97,6 +104,7 @@ on message SetSteer{
     return;
   
   ecuisPrimary = this.SetPrimaryActuatorSteer ? 1 : 0;
+  isPrimary = ecuisPrimary ? 1 : 0;
 }
 
 on message CommandResetSteer{
@@ -163,9 +171,9 @@ void Transmit(message * msg) {
     return;
   
   if(primaryBus==3) {
-    msg.can=1;
+    msg.can=5;
     output(msg);
-    msg.can=2;
+    msg.can=6;
     output(msg);
   }
   else
@@ -186,7 +194,7 @@ void TransmitStatus(){
 }
 
 void TransmitSteerFeedback(){
-  if( ecuisPrimary){
+  if(isPrimary){
   message SteerFeedback0 feedback;
   feedback.SteerFeedbackAngle.phys = steerFeedbackAngle;
   Transmit(feedback);
