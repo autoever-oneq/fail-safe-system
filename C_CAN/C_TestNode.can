@@ -1,0 +1,36 @@
+﻿/*@!Encoding:65001*/
+includes
+{
+  
+}
+
+variables
+{
+  long curSpeed = 0;
+  long tarSpeed = 0;
+  msTimer tim;
+}
+
+on timer tim {
+  
+}
+
+on message PowertrainStatus {
+  
+}
+
+on key '1' {
+  message * msg;
+  msg.can = 1;
+  msg.id = 0x01;
+  
+  output(msg);
+}
+
+on key '2' {
+  message * msg;
+  msg.can = 2;
+  msg.id = 0x01;
+  
+  output(msg);
+}

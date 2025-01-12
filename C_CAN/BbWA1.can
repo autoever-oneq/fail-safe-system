@@ -1,12 +1,10 @@
 ﻿/*@!Encoding:65001*/
-includes
-{
+includes {
   
 }
 
-variables
-{
-    /* Structs and Enums */
+variables {
+  /* Structs and Enums */
   /* Common Enums */
   enum MachineState {
     NORMAL = 0,
@@ -45,26 +43,6 @@ variables
   
   
   /* ECU Messages Enums */
-  enum MechanicalDistributionLevel {
-    MD_LEVEL_0 = 0,
-    MD_LEVEL_1 = 1,
-    MD_LEVEL_2 = 2
-  };
-  
-  
-  enum RegerativeBrakingLevel {
-    RB_LEVEL_0 = 0,
-    RB_LEVEL_1 = 1,
-    RB_LEVEL_2 = 2
-  };
-  
-  
-  enum PedalState {
-    PEDAL_INACTIVE = 0,
-    PEDAL_ACTIVE = 1
-  };
-  
-  
   enum AbsActive {
     ABS_INACTIVE = 0,
     ABS_ACTIVE = 1
@@ -80,6 +58,19 @@ variables
   enum ConnectionState {
     DISCONNECTED = 0,
     CONNECTED = 1
+  };
+  
+  
+  enum RegerativeBrakingLevel {
+    RB_LEVEL_0 = 0,
+    RB_LEVEL_1 = 1,
+    RB_LEVEL_2 = 2
+  };
+  
+  
+  enum PedalState {
+    PEDAL_INACTIVE = 0,
+    PEDAL_ACTIVE = 1
   };
   
   
@@ -108,27 +99,7 @@ variables
   
   
   /* ECU Message Structs */
-  struct MechanicalBrakeStatus {
-    int mechanicalBrakeDistribution;
-    enum MechanicalDistributionLevel mechanicalDistributionLevel;
-  };
-  
-  
-  struct RegenerativeBrakingStatus {
-    int regenerativeBrakingDistribution;
-    enum RegerativeBrakingLevel regenerativeBrakingLevel;
-  };
-  
-  
-  struct PowertrainStatus {
-    int batterySoC;
-    int batterySoH;
-    long vehicleSpeed;
-    long targetSpeed;
-  };
-  
-  
-  struct BbWSStatus {
+  struct BbWAStatus {
     byte isPrimary;
     enum MachineState state;
     int msgCount;
@@ -140,12 +111,6 @@ variables
     int activeBrakePressure;
     enum ConnectionState sensorState;
     enum PedalState pedalState;
-  };
-  
-  
-  struct BrakePedalState {
-    enum PedalState brakePedalActive;
-    int brakePedalPostion;
   };
   
   
@@ -162,16 +127,33 @@ variables
     enum FailInfo failInfo;
   };
   
+  struct AbsFeedback {
+    int absPulse;
+    int brakeTemperature;
+  };
   
-   /* Constant */
+  struct RegenerativeBrakingStatus {
+    int regenerativeBrakingDistribution;
+    enum RegerativeBrakingLevel regenerativeBrakingLevel;
+  };
+  
+  struct PowertrainStatus {
+    int batterySoC;
+    int batterySoH;
+    long vehicleSpeed;
+    long targetSpeed;
+  };
+  
+  
+  /* Constant */
   const int RATIO_10MS    = 1;
   const int RATIO_20MS    = 2;
   const int RATIO_50MS    = 5;
   const int RATIO_100MS   = 10;
   const int RATIO_1000MS  = 100;
   
-  const int BRAKE_PRESSURE_LOW_LIMIT = 0;
-  const int BRAKE_PRESSURE_HIGH_LIMIT = 16000;
+  const int BRAKE_PRESSURE_LOW_LIMIT = 40;
+  const int BRAKE_PRESSURE_HIGH_LIMIT = 160;
   const int BRAKE_DEFAULT_TEMPERATURE = 20;
   const double BRAKE_FRICTION = 0.4;
   const double BRAKE_CROSS_SECTION = 0.004;
@@ -194,8 +176,7 @@ variables
   
   const int VEHICLE_WEIGHT_KG = 2000;
   
-  // SENSOR-DEPENDANT
-  const enum Sensor SENSOR_NUM = SENSOR_0;
+  const enum Actuator ACTUATOR_NUM = ACTUATOR_1;
   
   /* Common */
   msTimer g_10msTimer;
@@ -206,6 +187,7 @@ variables
   /* Contrived Malfunction */
   enum MalfunctionState g_malfunctionState = MALFUNCTION_NONFAULT;
   
+  
   /* Redundancy */
   struct PrimaryEcu g_primaryEcu = {
     sensor = SENSOR_0,
@@ -213,17 +195,10 @@ variables
   };
   
   
-  /* MechanicalBrakeStatus */
-  struct MechanicalBrakeStatus g_mechanicalBrakeStatus = {
-    mechanicalBrakeDistribution = 0,
-    mechanicalDistributionLevel = MD_LEVEL_0
-  };
-  
   struct RegenerativeBrakingStatus g_regenerativeBrakingStatus = {
     regenerativeBrakingDistribution = 0,
     regenerativeBrakingLevel = RB_LEVEL_0
   };
-  
   
   struct PowertrainStatus g_powertrainStatus = {
     batterySoC = 0,
@@ -232,14 +207,14 @@ variables
     targetSpeed = 0
   };
   
-  
-  /* BbWS_Status */
-  struct BbWSStatus g_bbwsStatus = {
-    isPrimary = 1,
+  /* BbWA_Status */
+  struct BbWAStatus g_bbwaStatus = {
+    isPrimary = 0,
     state = NORMAL,
     msgCount = 0,
     primaryBus = BOTH
   };
+  
   
   /* BrakeCommand */
   struct BrakeCommand g_brakeCommand = {
@@ -249,18 +224,7 @@ variables
   };
   
   
-  struct BrakePedalState g_brakePedalState = {
-    brakePedalActive = PEDAL_INACTIVE,
-    brakePedalPostion = 0
-  };
-  
-  
-  struct FailStatus g_failStatus = {
-    failCount = 0,
-    failInfo = CAN_BUSY
-  };
-  
-  
+  /* BrakeFeedback */
   struct BrakeFeedback g_brakeFeedback = {
     feedbackPressure = 0,
     wheelSpeed = 0,
@@ -268,12 +232,27 @@ variables
     errorSig = SIGNAL_SUCCESS
   };
   
+  
+  /* FailStatus */
+  struct FailStatus g_failStatus = {
+    failCount = 0,
+    failInfo = CAN_BUSY
+  };
+  
+  
+  /* AbsFeedback */
+  struct AbsFeedback g_absFeedback = {
+    absPulse = 0,
+    brakeTemperature = BRAKE_DEFAULT_TEMPERATURE
+  };
+  
+  double g_speed_cmp10ms = 0;
 }
 
 
 
 on start {
-  setTimerCyclic(g_10msTimer, 10); 
+  setTimerCyclic(g_10msTimer, 10);
 }
 
 on timer g_resetTimer {
@@ -320,9 +299,9 @@ on message SetBrake {
   
   g_primaryEcu.sensor = (enum Sensor)this.SetPrimarySensorBrake;
   g_primaryEcu.actuator = (enum Actuator)this.SetPrimaryActuatorBrake;
-  if (g_primaryEcu.sensor == SENSOR_NUM) {
-    g_bbwsStatus.isPrimary = 1;
-    write("[+] BbWS0 is Primary");
+  if (g_primaryEcu.actuator == ACTUATOR_NUM) {
+    g_bbwaStatus.isPrimary = 1;
+    write("[+] BbWA1 is Primary");
   }
 }
 
@@ -331,9 +310,9 @@ on message CommandResetBrake {
     return;
   }
   
-  if (this.HardResetBbWS0 == 1) {
+  if (this.HardResetBbWA1 == 1) {
     // sleep 3s for reset
-    write("[+] BbWS0 Hard Reset");
+    write("[+] BbWA1 Hard Reset");
     g_malfunctionState = MALFUNCTION_TRANSCEIVER_ERR;
     setTimer(g_resetTimer, 3000);
   }
@@ -344,17 +323,7 @@ on message CANHealthyCheck {
     return;
   }
   
-  g_bbwsStatus.primaryBus = (enum CanBus)((this.CAN1Healthy * 2) + (this.CAN2Healthy * 1));
-}
-
-on message MechanicalBrakeStatus {
-  if (g_malfunctionState == MALFUNCTION_TRANSCEIVER_ERR) {
-    return;
-  }
-  
-  g_mechanicalBrakeStatus.mechanicalBrakeDistribution = this.MechanicalBrakeDistribution;
-  g_mechanicalBrakeStatus.mechanicalDistributionLevel = (enum MechanicalDistributionLevel)this.MechanicalDistributionLevel;
-  CalculateBrakePressure();
+  g_bbwaStatus.primaryBus = (enum CanBus)((this.CAN1Healthy * 2) + (this.CAN2Healthy * 1));
 }
 
 on message RegenerativeBrakeStatus {
@@ -377,88 +346,175 @@ on message PowertrainStatus {
   g_powertrainStatus.targetSpeed = this.TargetVehicleSpeed;
 }
 
-on message BrakeFeedback0 {
-  if (g_malfunctionState == MALFUNCTION_TRANSCEIVER_ERR) {
-    return;
-  }
-}
-
-on message BrakeFeedback1 {
-  if (g_malfunctionState == MALFUNCTION_TRANSCEIVER_ERR) {
-    return;
-  }
-}
-
-on message WheelStatus0 {
-  if (g_malfunctionState == MALFUNCTION_TRANSCEIVER_ERR) {
-    return;
-  }
-}
-
-on message WheelStatus1 {
+on message BbWS0_Status {
   if (g_malfunctionState == MALFUNCTION_TRANSCEIVER_ERR) {
     return;
   }
   
+  if (g_bbwaStatus.state == EMERGENCY) {
+    return;
+  }
+  
+  if (g_primaryEcu.sensor == SENSOR_1) {
+    return;
+  }
+  
+  if (this.PrimaryBus != this.can) {
+    return;
+  }
 }
 
+on message BbWS1_Status {
+  if (g_malfunctionState == MALFUNCTION_TRANSCEIVER_ERR) {
+    return;
+  }
+  
+  if (g_bbwaStatus.state == EMERGENCY) {
+    return;
+  }
+  
+  if (g_primaryEcu.sensor == SENSOR_0) {
+    return;
+  }
+  
+  if (this.PrimaryBus != this.can) {
+    return;
+  }
+}
 
-void TransmitBrakeSensorStatus() {
-  message BbWS0_Status statusMsg;
-  statusMsg.EcuIsPrimary.phys = g_bbwsStatus.isPrimary;
-  statusMsg.BbWS_MachineState.phys = g_bbwsStatus.state;
-  statusMsg.EcuStatusMsgCount.phys = g_bbwsStatus.msgCount++;
-  statusMsg.PrimaryBus.phys = g_bbwsStatus.primaryBus;
+on message BrakePedalState0 {
+  if (g_malfunctionState == MALFUNCTION_TRANSCEIVER_ERR) {
+    return;
+  }
+  
+  if (g_bbwaStatus.state == EMERGENCY) {
+    return;
+  }
+}
+
+on message BrakePedalState1 {
+  if (g_malfunctionState == MALFUNCTION_TRANSCEIVER_ERR) {
+    return;
+  }
+  
+  if (g_bbwaStatus.state == EMERGENCY) {
+    return;
+  }
+}
+
+on message BrakeCommand0 {
+  if (g_malfunctionState == MALFUNCTION_TRANSCEIVER_ERR) {
+    return;
+  }
+  
+  if (g_bbwaStatus.state == EMERGENCY) {
+    return;
+  }
+  
+  if (g_primaryEcu.sensor == SENSOR_1) {
+   return;
+  }
+  
+  g_brakeCommand.activeBrakePressure = this.ActiveBrakePressure;
+  g_brakeCommand.sensorState = (enum ConnectionState)this.BrakeConnectionState;
+  g_brakeCommand.pedalState = (enum PedalState)this.BrakePedalActive;
+  
+  if (this.BrakePedalActive == PEDAL_ACTIVE) {
+    ActuateBrake();
+  }
+}
+
+on message BrakeCommand1 {
+  if (g_malfunctionState == MALFUNCTION_TRANSCEIVER_ERR) {
+    return;
+  }
+  
+  if (g_bbwaStatus.state == EMERGENCY) {
+    return;
+  }
+  
+  if (g_primaryEcu.sensor == SENSOR_0) {
+   return;
+  }
+  
+  g_brakeCommand.activeBrakePressure = this.ActiveBrakePressure;
+  g_brakeCommand.sensorState = (enum ConnectionState)this.BrakeConnectionState;
+  g_brakeCommand.pedalState = (enum PedalState)this.BrakePedalActive;
+  
+  if (this.BrakePedalActive == PEDAL_ACTIVE) {
+    ActuateBrake();
+  }
+}
+
+on message AbsFeedback {
+  if (g_malfunctionState == MALFUNCTION_TRANSCEIVER_ERR) {
+    return;
+  
+  }
+  g_absFeedback.absPulse = this.AbsPulse;
+  g_absFeedback.brakeTemperature = this.BrakeTemperature;
+}
+
+void TransmitBrakeActuatorStatus() {
+  message BbWA1_Status statusMsg;
+  
+  statusMsg.EcuIsPrimary.phys = g_bbwaStatus.isPrimary;
+  statusMsg.BbWA_MachineState.phys = g_bbwaStatus.state;
+  statusMsg.EcuStatusMsgCount.phys = g_bbwaStatus.msgCount++;
+  statusMsg.PrimaryBus.phys = g_bbwaStatus.primaryBus;
   
   Transmit(statusMsg);
 }
 
-void TransmitBrakeCommand() {
-  message BrakeCommand0 commandMsg;
-  commandMsg.ActiveBrakePressure.phys = g_brakeCommand.activeBrakePressure;
-  commandMsg.BrakeConnectionState.phys = g_brakeCommand.sensorState;
-  commandMsg.BrakePedalActive.phys = g_brakeCommand.pedalState;
+void TransmitBrakeFeedback() {
+  message BrakeFeedback1 feedbackMsg;
+  feedbackMsg.BrakeErrorSig.phys = g_brakeFeedback.errorSig;
+  feedbackMsg.BrakeFeedbackABSActive.phys = g_brakeFeedback.feedbackAbsActive;
+  feedbackMsg.BrakeFeedbackPressure.phys = g_brakeFeedback.feedbackPressure;
+  feedbackMsg.WheelSpeed.phys = g_brakeFeedback.wheelSpeed;
   
-  Transmit(commandMsg);
+  Transmit(feedbackMsg);
 }
 
 void TransmitBrakeFailStatus() {
-  message BrakeSensor0FailStatus failStatusMsg;
-  failStatusMsg.BbWS_FailCount.phys = g_failStatus.failCount;
-  failStatusMsg.BbWS_FailInfo.phys = g_failStatus.failInfo;
+  message BrakeActuator1FailStatus failStatusMsg;
+  failStatusMsg.BbWA_FailCount.phys = g_failStatus.failCount;
+  failStatusMsg.BbWA_FailInfo.phys = g_failStatus.failInfo;
   
   Transmit(failStatusMsg);
 }
 
-void TransmitBrakePedalState() {
-  message BrakePedalState0 pedalMsg;
-  pedalMsg.BrakePedalActive.phys = g_brakePedalState.brakePedalActive;
-  pedalMsg.BrakePedalPosition.phys = g_brakePedalState.brakePedalPostion;
+void TransmitWheelSpeed() {
+  message WheelStatus1 wheelStatus;
+  wheelStatus.WheelSpeed.phys = g_brakeFeedback.wheelSpeed;
   
-  Transmit(pedalMsg);
+  Transmit(wheelStatus);
 }
 
 void AppSchedule10ms() {
-  TransmitBrakeSensorStatus();
-  TransmitBrakeCommand();
+  TransmitBrakeActuatorStatus();
+  TransmitBrakeFeedback();
 }
 
 void AppSchedule20ms() {
-  TransmitBrakePedalState();
   TransmitBrakeFailStatus();
 }
 
 void AppSchedule50ms() {}
 
-void AppSchedule100ms() {}
+void AppSchedule100ms() {
+  TransmitWheelSpeed();
+}
 
 void AppSchedule1000ms() {}
 
 void ModifyMachineStatus(enum MachineState state) {
-  g_bbwsStatus.state = state;
+  g_bbwaStatus.state = state;
   
-  if (g_bbwsStatus.state == EMERGENCY) {
-    //todo!: Emergency Process
+  if (g_bbwaStatus.state == EMERGENCY) {
+    g_brakeCommand.activeBrakePressure = BRAKE_PRESSURE_HIGH_LIMIT;
+    g_brakeCommand.pedalState = PEDAL_ACTIVE;
+    ActuateBrake();
   }
 }
 
@@ -467,7 +523,7 @@ void Transmit(message * msg) {
     return;
   }
   
-  switch (g_bbwsStatus.primaryBus) {
+  switch (g_bbwaStatus.primaryBus) {
     case BOTH:
       msg.can = CHANNEL1;
       output(msg);
@@ -491,11 +547,12 @@ void HardReset() {
   /* Common */
   g_timerCounter = 0;
   
+  
   /* BbWA_Status */
-  g_bbwsStatus.isPrimary = 0;
-  g_primaryEcu.sensor = SENSOR_1;
-  g_bbwsStatus.state = NORMAL;
-  g_bbwsStatus.msgCount = 0;
+  g_bbwaStatus.isPrimary = 0;
+  g_primaryEcu.actuator = ACTUATOR_0;
+  g_bbwaStatus.state = NORMAL;
+  g_bbwaStatus.msgCount = 0;
   
   
   /* BrakeFeedback */
@@ -511,37 +568,47 @@ void HardReset() {
   g_malfunctionState = MALFUNCTION_NONFAULT;
 }
 
-void CalculateBrakePressure() {
-  double a, Fb, vt, v0;
-  double P;
+void ActuateBrake() {
+  //todo!: involving ABS while braking
   
   if (g_malfunctionState == MALFUNCTION_LOGIC_ERR) {
     g_failStatus.failCount++;
-    g_failStatus.failInfo = SENSOR_ERR;
+    g_failStatus.failInfo = ACTUATOR_ERR;
   }
   
-  vt = g_powertrainStatus.targetSpeed * KPH_TO_CMP10MS;
-  v0 = g_powertrainStatus.vehicleSpeed * KPH_TO_CMP10MS;
-  
-  if (vt >= v0) {
-    g_brakeCommand.activeBrakePressure = 0;
-    g_brakeCommand.pedalState = PEDAL_ACTIVE;
-    g_brakeCommand.sensorState = CONNECTED;
+  if (ACTUATOR_NUM != g_primaryEcu.actuator) {
     return;
   }
   
-  a = (v0 - vt);
-  Fb = VEHICLE_WEIGHT_KG * a;
-  P = Fb / (BRAKE_CROSS_SECTION * BRAKE_FRICTION * BRAKE_COUNT) / BAR_Npm2;
-  P *= 100; // 100x scaling
-  
-  g_brakeCommand.activeBrakePressure = (int)P;
-  g_brakeCommand.pedalState = PEDAL_ACTIVE;
-  g_brakeCommand.sensorState = CONNECTED;
-  
-  write("P: %lf, a: %lf, Fb: %lf", P, a, Fb);
+  MechanicalBrake();
 }
 
-on key 'n' {
-  g_malfunctionState = MALFUNCTION_TRANSCEIVER_ERR; 
+
+void MechanicalBrake() {
+  double vehicleSpeed_cmp10ms, targetSpeed_cmp10ms, speedDelta;
+  double Fb, a;
+  vehicleSpeed_cmp10ms = g_powertrainStatus.vehicleSpeed * KPH_TO_CMP10MS;
+  targetSpeed_cmp10ms = g_powertrainStatus.targetSpeed * KPH_TO_CMP10MS;
+  speedDelta = vehicleSpeed_cmp10ms - targetSpeed_cmp10ms;
+  
+  if (speedDelta <= 0) {
+    g_speed_cmp10ms = targetSpeed_cmp10ms;
+  }
+  else {
+    g_speed_cmp10ms = vehicleSpeed_cmp10ms - g_brakeCommand.activeBrakePressure * SPEED_DELTA_PER_BAR_CMP10MS;
+    if (g_speed_cmp10ms < targetSpeed_cmp10ms) {
+      g_speed_cmp10ms = targetSpeed_cmp10ms;
+    }
+  }
+  CalculateWheelSpeed();
+  // write("wheelspeed: %d, speed: %lf", g_brakeFeedback.wheelSpeed, g_speed_cmp10ms / KPH_TO_CMP10MS);
+}
+
+void CalculateWheelSpeed() {
+  g_brakeFeedback.wheelSpeed = (g_speed_cmp10ms * SECOND_TO_10MS * MINUITE_TO_SECOND) / (2 * pi * TYRE_RADIUS_CM);
+}
+
+on key 'g' {
+  g_malfunctionState = MALFUNCTION_TRANSCEIVER_ERR;
+  //setTimer(g_resetTimer, 3000);
 }

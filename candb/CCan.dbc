@@ -93,7 +93,8 @@ BO_ 339 EpbStatus: 1 VCU
 BO_ 340 GearStatus: 1 VCU
  SG_ GearStatus : 0|2@1+ (1,0) [0|3] "flag"  EPB
 
-BO_ 338 PowertrainStatus: 4 VCU
+BO_ 338 PowertrainStatus: 6 VCU
+ SG_ TargetVehicleSpeed : 32|16@1+ (1,0) [0|65535] ""  ABS,BbW_S1,BbW_S0,BbW_A1,BbW_A0
  SG_ VehicleSpeed : 16|16@1+ (1,0) [0|65535] "kph"  BbW_S1,BbW_S0,BbW_A1,BbW_A0,ABS
  SG_ BatterySOH : 8|7@1+ (1,0) [0|100] "percentage"  BbW_S1,BbW_S0,BbW_A1,BbW_A0,ABS
  SG_ BatterySOC : 0|7@1+ (1,0) [0|100] "percentage"  BbW_S1,BbW_S0,BbW_A1,BbW_A0,ABS
@@ -143,17 +144,17 @@ BO_ 322 SteerActuator0FailStatus: 1 SbW_A0
  SG_ SbWA_FailCount : 0|6@1+ (1,0) [0|50] ""  VCU
 
 BO_ 337 RegenerativeBrakeStatus: 2 VCU
- SG_ RegenerativeBrakingLevel : 8|2@1+ (1,0) [0|3] "flag"  BbW_S1,BbW_S0
- SG_ RegenerativeBrakingDistribution : 0|7@1+ (1,0) [0|100] "percentage"  BbW_S1,BbW_S0
+ SG_ RegenerativeBrakingLevel : 8|2@1+ (1,0) [0|3] "flag"  BbW_A1,BbW_A0,BbW_S1,BbW_S0
+ SG_ RegenerativeBrakingDistribution : 0|7@1+ (1,0) [0|100] "percentage"  BbW_A1,BbW_A0,BbW_S1,BbW_S0
 
 BO_ 336 MechanicalBrakeStatus: 2 VCU
  SG_ MechanicalDistributionLevel : 8|2@1+ (1,0) [0|3] "flag"  BbW_S1,BbW_S0
  SG_ MechanicalBrakeDistribution : 0|7@1+ (1,0) [0|100] "percentage"  BbW_S1,BbW_S0
 
-BO_ 273 BrakeCommand1: 2 BbW_S1
- SG_ BrakePedalActive : 8|1@1+ (1,0) [0|1] "flag" Vector__XXX
- SG_ ActiveBrakePressure : 1|6@1+ (2,40) [40|166] ""  BbW_A1,BbW_A0
- SG_ BrakeConnectionState : 0|1@1+ (1,0) [0|1] "flag"  VCU
+BO_ 273 BrakeCommand1: 3 BbW_S1
+ SG_ BrakePedalActive : 0|1@1+ (1,0) [0|1] "flag" Vector__XXX
+ SG_ ActiveBrakePressure : 2|15@1+ (1,0) [0|32767] "bar"  BbW_A1,BbW_A0
+ SG_ BrakeConnectionState : 1|1@1+ (1,0) [0|1] "flag"  VCU
 
 BO_ 309 WheelStatus1: 2 BbW_A1
  SG_ WheelSpeed : 0|10@1+ (1,0) [0|1023] "rpm"  ABS,VCU,SbW_S1,SbW_S0,SbW_A1,SbW_A0,CLU,BbW_S1,BbW_S0,BbW_A0
@@ -183,9 +184,9 @@ BO_ 275 BrakePedalState1: 1 BbW_S1
  SG_ BrakePedalActive : 0|1@1+ (1,0) [0|1] "flag"  BbW_A1,BbW_A0,ABS,VCU
 
 BO_ 305 BrakeFeedback1: 4 BbW_A1
- SG_ WheelSpeed : 16|10@1+ (1,0) [0|1023] "rpm"  BbW_S1,BbW_S0,VCU,BbW_A0
+ SG_ WheelSpeed : 17|10@1+ (1,0) [0|1023] "rpm"  BbW_S1,BbW_S0,VCU,BbW_A0
  SG_ BrakeErrorSig : 1|1@1+ (1,0) [0|1] "flag"  BbW_S1,BbW_S0,VCU,BbW_A0
- SG_ BrakeFeedbackPressure : 8|6@1+ (2,40) [40|166] "bar"  BbW_S1,BbW_S0,VCU,BbW_A0
+ SG_ BrakeFeedbackPressure : 2|15@1+ (1,0) [0|32767] "bar"  BbW_S1,BbW_S0,VCU,BbW_A0
  SG_ BrakeFeedbackABSActive : 0|1@1+ (1,0) [0|1] ""  BbW_S1,BbW_S0,VCU,BbW_A0
 
 BO_ 258 SetSteer: 1 VCU
@@ -207,20 +208,20 @@ BO_ 320 SteerFeedback0: 2 SbW_A0
  SG_ SteerFeedbackAngle : 0|8@1- (0.5,0) [-60|60] "degree"  SbW_S1,SbW_S0,VCU
 
 BO_ 304 BrakeFeedback0: 4 BbW_A0
- SG_ WheelSpeed : 16|10@1+ (1,0) [0|1023] "rpm"  BbW_S1,BbW_S0,VCU,BbW_A1
- SG_ BrakeFeedbackABSActive : 9|1@1+ (1,0) [0|1] ""  BbW_S1,BbW_S0,VCU,BbW_A1
+ SG_ WheelSpeed : 17|10@1+ (1,0) [0|1023] "rpm"  BbW_S1,BbW_S0,VCU,BbW_A1
+ SG_ BrakeFeedbackABSActive : 1|1@1+ (1,0) [0|1] ""  BbW_S1,BbW_S0,VCU,BbW_A1
  SG_ BrakeErrorSig : 0|1@1+ (1,0) [0|1] "flag"  BbW_S1,BbW_S0,BbW_A1,VCU
- SG_ BrakeFeedbackPressure : 1|6@1+ (2,40) [40|166] "bar"  BbW_S1,BbW_S0,BbW_A1,VCU
+ SG_ BrakeFeedbackPressure : 2|15@1+ (1,0) [0|32767] "bar"  BbW_S1,BbW_S0,BbW_A1,VCU
 
 BO_ 288 SteerCommand0: 4 SbW_S0
  SG_ SteerConnectionState : 18|1@1+ (1,0) [0|1] ""  VCU
  SG_ SteerWheelTorque : 19|8@1- (0.2,0) [-25.6|25.4] "Nm"  VCU,SbW_A1,SbW_A0
  SG_ SteerAngle : 0|18@1- (1,0) [-90000|90000] "degree"  SbW_A0,SbW_A1,VCU
 
-BO_ 272 BrakeCommand0: 2 BbW_S0
- SG_ BrakePedalActive : 8|1@1+ (1,0) [0|1] "flag" Vector__XXX
- SG_ ActiveBrakePressure : 1|6@1+ (2,40) [40|166] ""  BbW_A1,BbW_A0
- SG_ BrakeConnectionState : 0|1@1+ (1,0) [0|1] "flag"  VCU
+BO_ 272 BrakeCommand0: 3 BbW_S0
+ SG_ BrakePedalActive : 0|1@1+ (1,0) [0|1] "flag" Vector__XXX
+ SG_ ActiveBrakePressure : 2|15@1+ (1,0) [0|32767] "bar"  BbW_A1,BbW_A0
+ SG_ BrakeConnectionState : 1|1@1+ (1,0) [0|1] "flag"  VCU
 
 BO_ 274 BrakePedalState0: 1 BbW_S0
  SG_ BrakePedalPosition : 1|7@1+ (1,0) [0|100] "percentage"  ABS,BbW_A0,BbW_A1,VCU

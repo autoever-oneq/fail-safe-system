@@ -195,7 +195,7 @@ variables
   const int VEHICLE_WEIGHT_KG = 2000;
   
   // SENSOR-DEPENDANT
-  const enum Sensor SENSOR_NUM = SENSOR_0;
+  const enum Sensor SENSOR_NUM = SENSOR_1;
   
   /* Common */
   msTimer g_10msTimer;
@@ -235,7 +235,7 @@ variables
   
   /* BbWS_Status */
   struct BbWSStatus g_bbwsStatus = {
-    isPrimary = 1,
+    isPrimary = 0,
     state = NORMAL,
     msgCount = 0,
     primaryBus = BOTH
@@ -322,7 +322,7 @@ on message SetBrake {
   g_primaryEcu.actuator = (enum Actuator)this.SetPrimaryActuatorBrake;
   if (g_primaryEcu.sensor == SENSOR_NUM) {
     g_bbwsStatus.isPrimary = 1;
-    write("[+] BbWS0 is Primary");
+    write("[+] BbWS1 is Primary");
   }
 }
 
@@ -331,7 +331,7 @@ on message CommandResetBrake {
     return;
   }
   
-  if (this.HardResetBbWS0 == 1) {
+  if (this.HardResetBbWS1 == 1) {
     // sleep 3s for reset
     write("[+] BbWS0 Hard Reset");
     g_malfunctionState = MALFUNCTION_TRANSCEIVER_ERR;
@@ -404,7 +404,7 @@ on message WheelStatus1 {
 
 
 void TransmitBrakeSensorStatus() {
-  message BbWS0_Status statusMsg;
+  message BbWS1_Status statusMsg;
   statusMsg.EcuIsPrimary.phys = g_bbwsStatus.isPrimary;
   statusMsg.BbWS_MachineState.phys = g_bbwsStatus.state;
   statusMsg.EcuStatusMsgCount.phys = g_bbwsStatus.msgCount++;
@@ -414,7 +414,7 @@ void TransmitBrakeSensorStatus() {
 }
 
 void TransmitBrakeCommand() {
-  message BrakeCommand0 commandMsg;
+  message BrakeCommand1 commandMsg;
   commandMsg.ActiveBrakePressure.phys = g_brakeCommand.activeBrakePressure;
   commandMsg.BrakeConnectionState.phys = g_brakeCommand.sensorState;
   commandMsg.BrakePedalActive.phys = g_brakeCommand.pedalState;
@@ -423,7 +423,7 @@ void TransmitBrakeCommand() {
 }
 
 void TransmitBrakeFailStatus() {
-  message BrakeSensor0FailStatus failStatusMsg;
+  message BrakeSensor1FailStatus failStatusMsg;
   failStatusMsg.BbWS_FailCount.phys = g_failStatus.failCount;
   failStatusMsg.BbWS_FailInfo.phys = g_failStatus.failInfo;
   
@@ -431,7 +431,7 @@ void TransmitBrakeFailStatus() {
 }
 
 void TransmitBrakePedalState() {
-  message BrakePedalState0 pedalMsg;
+  message BrakePedalState1 pedalMsg;
   pedalMsg.BrakePedalActive.phys = g_brakePedalState.brakePedalActive;
   pedalMsg.BrakePedalPosition.phys = g_brakePedalState.brakePedalPostion;
   
@@ -455,8 +455,7 @@ void AppSchedule100ms() {}
 void AppSchedule1000ms() {}
 
 void ModifyMachineStatus(enum MachineState state) {
-  g_bbwsStatus.state = state;
-  
+  g_bbwsStatus.state  = state;
   if (g_bbwsStatus.state == EMERGENCY) {
     //todo!: Emergency Process
   }
@@ -491,9 +490,10 @@ void HardReset() {
   /* Common */
   g_timerCounter = 0;
   
+  
   /* BbWA_Status */
   g_bbwsStatus.isPrimary = 0;
-  g_primaryEcu.sensor = SENSOR_1;
+  g_primaryEcu.sensor = SENSOR_0;
   g_bbwsStatus.state = NORMAL;
   g_bbwsStatus.msgCount = 0;
   
@@ -542,6 +542,8 @@ void CalculateBrakePressure() {
   write("P: %lf, a: %lf, Fb: %lf", P, a, Fb);
 }
 
+/*
 on key 'n' {
   g_malfunctionState = MALFUNCTION_TRANSCEIVER_ERR; 
 }
+*/
