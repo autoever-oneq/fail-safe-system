@@ -26,8 +26,11 @@ variables
   byte modeState; // vehicle mode 0(normal) 1(caution) 2(emergency)
   byte HardResetSig; // 1 to reset
   byte isHealthyBus; // 0(none),1,2,3(both)
-  
-  
+  enum primarySen{
+    SEN0,
+    SEN1
+  };
+  byte pSen;
   
   // Self Data
   float steerFeedbackAngle;
@@ -97,6 +100,15 @@ on timer SbWA0_T{
   }
 }
 
+on message SbWS0_Status{
+  
+  pSen = this.EcuIsPrimary ? 0 : 1;
+}
+
+on message SbWS1_Status{
+  pSen = this.EcuIsPrimary ? 1 : 0;
+}
+
 on message SetSteer{
   if(error==MALFUNCTION_LOGIC_ERR)
     return;
@@ -118,11 +130,15 @@ on message CommandResetSteer{
 }
 
 on message SteerCommand0{
+  if(pSen)
+    return;
   ActuateSteer(this.SteerAngle);
   CommandLost =0;
 }
 
 on message SteerCommand1{
+  if(!pSen)
+    return;
   ActuateSteer(this.SteerAngle);
   CommandLost =0;   
 }

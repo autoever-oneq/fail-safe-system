@@ -11,7 +11,7 @@ variables
   byte is_off=0;
   
   // VCU's
-  byte ecuisPrimary=1;
+  byte ecuisPrimary=0;
   byte SbWS_Machinstate =0;
   word ecuStatusMsgCnt =0;
   byte primaryBus =5;
@@ -39,7 +39,7 @@ variables
   };
   byte isDriverCmdOk=0;
   
-  byte isPrimary=0;
+  byte isPrimary=1;
   byte MachineState=0;
   
   long SteerDriverAngle=0;
@@ -86,7 +86,7 @@ on start
 
 on timer Reset_T{
   is_off=0;
-  ecuisPrimary =1;
+  ecuisPrimary =0;
   isPrimary =0;
   SbWS_Machinstate =0;
   ecuStatusMsgCnt =0;
@@ -213,6 +213,10 @@ on sysvar Chassis::DriverSteerAngle{
   
 on timer SbWS_timer
 {
+    if(isPrimary)
+    @sysvar::Chassis::WheelAngle=_100xSteerAngle;
+  else
+    _100xSteerAngle=@sysvar::Chassis::WheelAngle;
   if(!is_off){
   
     if(isHandleOn){
@@ -240,8 +244,7 @@ on timer SbWS_timer
     @sysvar::Chassis::DriverSteerAngle =SteerDriverAngle;
      }
     
-    if(isPrimary)
-      TransmitSteerCommand0(); // 액츄에이터에 연산 결과(조향각) 송신
+    TransmitSteerCommand0(); // 액츄에이터에 연산 결과(조향각) 송신
     
     TransmitDriverStatus0();
     TransmitSensor0FailStatus();
@@ -474,14 +477,13 @@ void TransmitStatus(){
  } 
 
 void TransmitSteerCommand0(){
-  if(isPrimary){
   message SteerCommand0 cmd;
   cmd.SteerAngle.phys = _100xSteerAngle;
   cmd.SteerWheelTorque.phys=SteerWheelTorque;
   cmd.SteerConnectionState.phys = SteerConnectionState;
-  write("Current Speed : %d, Steer Angle : %d, Driver Angle : %d \n" ,carspeed,_100xSteerAngle,SteerDriverAngle);
+  write("ECU : %d,Current Speed : %d, Steer Angle : %d, Driver Angle : %d \n" ,0, carspeed,_100xSteerAngle,SteerDriverAngle);
   Transmit(cmd);
-  }
+  
 }
 
 
@@ -501,9 +503,7 @@ on key 's'{
 }
 
 on key 'c'{
-  isPrimary = !isPrimary;
-      _100xSteerAngle=@sysvar::Chassis::WheelAngle;
-    SteerDriverAngle=@sysvar::Chassis::DriverSteerAngle;
-        _100xSteerAngleBefore=_100xSteerAngle;
+    isPrimary = !isPrimary;
+    ecuisPrimary = !isPrimary;
   
 }
