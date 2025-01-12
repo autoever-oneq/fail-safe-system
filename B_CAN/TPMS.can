@@ -20,13 +20,17 @@ variables
   int StartUpFlag = 0;
 }
 
-on start 
-{
-  setTimerCyclic(loop,100);
+on prestart{
   @sysvar::BODY::FLTIREPRESSURE = 500;
   @sysvar::BODY::FRTIREPRESSURE = 500;
   @sysvar::BODY::RLTIREPRESSURE = 500;
   @sysvar::BODY::RRTIREPRESSURE = 500;
+}
+
+on start 
+{
+  setTimerCyclic(loop,100);
+  
   ReadTireStatus();
   UpdateTireStatus();
 }
@@ -101,7 +105,7 @@ void TireAlert(){
 void sendMsg_TireStateFL() 
 {
   message TireStateFL msg;
-  msg.WheelFLPressure.phys = CurrentTireStatus.FL;
+  msg.WheelFLPressure.phys = @sysvar::BODY::FLTIREPRESSURE;
   msg.WheelFLTemp.phys = 60;
   if(StartUpFlag == 1) output(msg);
 }
@@ -109,7 +113,7 @@ void sendMsg_TireStateFL()
 void sendMsg_TireStateFR() 
 {
   message TireStateFR msg;
-  msg.WheelFRPressure.phys = CurrentTireStatus.FR;
+  msg.WheelFRPressure.phys = @sysvar::BODY::FRTIREPRESSURE;
   msg.WheelFRTemp.phys = 60;
   if(StartUpFlag == 1) output(msg);
 }
@@ -117,7 +121,7 @@ void sendMsg_TireStateFR()
 void sendMsg_TireStateRL() 
 {
   message TireStateRL msg;
-  msg.WheelRLPressure.phys = CurrentTireStatus.RL;
+  msg.WheelRLPressure.phys = @sysvar::BODY::RLTIREPRESSURE;
   msg.WheelRLTemp.phys = 60;
   if(StartUpFlag == 1) output(msg);
 }
@@ -125,7 +129,7 @@ void sendMsg_TireStateRL()
 void sendMsg_TireStateRR() 
 {
   message TireStateRR msg;
-  msg.WheelRRPressure.phys = CurrentTireStatus.RR;
+  msg.WheelRRPressure.phys = @sysvar::BODY::RRTIREPRESSURE;
   msg.WheelRRTemp.phys = 60;
   if(StartUpFlag == 1) output(msg);
 }

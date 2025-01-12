@@ -1,0 +1,84 @@
+﻿/*@!Encoding:65001*/
+includes
+{
+  
+}
+
+variables
+{
+  msTimer loop;
+  
+  int accel_pedal_position; // 엑셀 페달 밟은 세기 (0 ~ 100)
+  int brake_pedal_position; // 브레이크 페달 밟은 세기 (0 ~ 100)
+  char accel_pedal_position_flag; // 엑셀 페달 밟은 여부 (0, 1)
+  char brake_pedal_active;  // 브레이크 페달 밟은 여부 (0, 1)
+  char regen_brake_level = 1;   // 회생 제동 레벨 (0 ~ 3)
+}
+
+on start
+{
+  setTimerCyclic(loop, 100);
+}
+
+on timer loop
+{
+  message PCAN_TEMP msg; 
+  accel_pedal_position = accel_pedal_position > 100 ? 100 : accel_pedal_position;
+  brake_pedal_position = brake_pedal_position > 100 ? 100 : brake_pedal_position;
+  
+  msg.Accel_Pedal_Position = accel_pedal_position;
+  msg.Accel_Pedal_Position_Flag = accel_pedal_position_flag;
+  msg.Brake_Pedal_Position = brake_pedal_position;
+  msg.Brake_Pedal_Active = brake_pedal_active;
+  msg.Regen_Brake_Level = regen_brake_level;
+  
+  output(msg);
+}
+
+on key 'q'
+{
+  accel_pedal_position += 10;
+  write("accel_pedal_position : %d", accel_pedal_position);
+}
+
+on key 'w'
+{
+  accel_pedal_position -= 10;
+  write("accel_pedal_position : %d", accel_pedal_position);
+}
+
+on key 'a'
+{
+  brake_pedal_position += 10;
+  write("brake_pedal_position : %d", brake_pedal_position);
+}
+
+on key 's'
+{
+  brake_pedal_position -= 10;
+  write("brake_pedal_position : %d", brake_pedal_position);
+}
+
+on key 'z'
+{
+  regen_brake_level += 1;
+  write("regen_brake_level : %d", regen_brake_level);
+}
+
+on key 'x'
+{
+  regen_brake_level -= 1;
+  write("regen_brake_level : %d", regen_brake_level);
+}
+
+on key 'c'
+{
+  accel_pedal_position_flag ^= 1;
+  write("accel_pedal_position_flag : %d", accel_pedal_position_flag);
+}
+
+on key 'v'
+{
+  brake_pedal_active ^= 1;
+  write("brake_pedal_active : %d", brake_pedal_active);
+}

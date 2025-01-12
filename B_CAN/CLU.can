@@ -7,7 +7,7 @@ includes
 variables
 {
     msTimer loop;
-    int RegBrakeLevel = 0;
+    byte RegBrakeLevel = 0;
     int Ignition_Status = 0;
     int StartUpFlag = 0;
     int Gear_Status = 0; 
@@ -17,12 +17,23 @@ variables
       N = 2,
       D = 3
     }GearDisplay;
+    int CurVelocity = 0;
+    int Regen_Brake_Status = 0;
+    int BatterySOC = 100;
+    int Battery_Output_Limit = 0;
 
     const int STAGE_REGBR_INPUT = 4;
+    const int AverageTirePressure = 500;
 }
 
 on start
 {
+  @sysvar::BODY::CLU_FL = 0;
+  @sysvar::BODY::CLU_FR = 0;
+  @sysvar::BODY::CLU_RL = 0;
+  @sysvar::BODY::CLU_RR = 0;
+  Ignition_Status = 1;
+  sendMsg_IgnitionOn(); // 시작시 시동
   sendMsg_RegBrake_level(RegBrakeLevel);
   setTimerCyclic(loop,100);
 }
@@ -77,6 +88,25 @@ on sysvar_update BODY::IGNITIONBUTTON
   }
 }
 
+
+on sysvar BODY::CLU_FL{
+  sendMsg_TireCautionAlert();
+}
+
+on sysvar BODY::CLU_FR{
+  sendMsg_TireCautionAlert();
+}
+
+on sysvar BODY::CLU_RL{
+  sendMsg_TireCautionAlert();
+}
+
+on sysvar BODY::CLU_RR{
+  sendMsg_TireCautionAlert();
+}
+
+
+
 on message StartUp
 {
   StartUpFlag = this.StartUpSignal;
@@ -92,9 +122,42 @@ on message GearInput
   Gear_Status = this.GearInput;
 }
 
-void sendMsg_RegBrake_level(int ButtonState) {
+on message TireStateFL{ 
+  if (this.WheelFLPressure <= AverageTirePressure * 0.8 || this.WheelFLPressure >= AverageTirePressure * 1.2){
+    @sysvar::BODY::CLU_FL = 1;
+  }
+}
+on message TireStateFR{
+  if ((this.WheelFRPressure <= AverageTirePressure * 0.8) || (this.WheelFRPressure >= AverageTirePressure * 1.2)){
+    @sysvar::BODY::CLU_FL = 1;
+  }
+}
+on message TireStateRL{
+  if ((this.WheelRLPressure <= AverageTirePressure * 0.8) || (this.WheelRLPressure >= AverageTirePressure * 1.2)){
+    @sysvar::BODY::CLU_FL = 1;
+  }
+}
+on message TireStateRR{
+  if ((this.WheelRRPressure <= AverageTirePressure * 0.8) || (this.WheelRRPressure >= AverageTirePressure * 1.2)){
+    @sysvar::BODY::CLU_FL = 1;
+  }
+}
+on message FrmVCU_CLU_100ms{
+  CurVelocity = this.CurVelocity;
+  @sysvar::BODY::CLUVELOCITY = CurVelocity;
+}
+
+on message FrmPCAN_CLU_500ms{
+  Regen_Brake_Status = this.Regen_Brake_Status;
+  BatterySOC = this.BatterySOC;
+  Battery_Output_Limit = this.Battery_Output_Limit;
+  @sysvar::BODY::REGENBUTTON = Regen_Brake_Status;
+}
+
+
+void sendMsg_RegBrake_level(byte ButtonState) {
   message RegBrake_level msg;
-  msg.RegBrake_Level.phys = RegBrakeLevel;
+  msg.RegBrake_Level.phys = ButtonState;
   if(StartUpFlag == 1) output(msg);
 }
 
@@ -136,4 +199,11 @@ void sendMsg_ADSOperation(){
   message ADSOperation msg;
   msg.ADSOperation = 0;
   if(StartUpFlag == 1) output(msg);
+}
+
+
+void sendMsg_TireCautionAlert(){
+  message TireCautionAlert msg;
+  msg.TireCautionAlertFlag.phys = 1;
+  output(msg);
 }

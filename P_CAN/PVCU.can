@@ -1,4 +1,4 @@
-﻿/*@!Encoding:65001*/
+/*@!Encoding:65001*/
 includes
 {
   
@@ -16,7 +16,7 @@ variables
   /* BMU */
   int battery_volt;           // 배터리 전압 (0 ~ 1000)
   int battery_soh;            // 배터리 잔존 수명 (0 ~ 100)
-  int battery_soc = 3000;            // 배터리 충전량 (0 ~ 100)
+  int battery_soc = 10000;            // 배터리 충전량 (0 ~ 100)
   int battery_temp;           // 배터리 온도 (-50 ~ 150)
   
   int remain_range;           // 현재 배터리 잔량 기준 예상 남은 주행 거리 (0 ~ 500)
@@ -27,6 +27,10 @@ variables
   
   /* MCU */
   int motor_rpm;              // 모터 RPM (0 ~ 11000)
+  int rpm_increase;
+  long cur_car_speed;        // 현재 속도
+  long next_car_speed;       // 다음 속도
+  int regen_motor_rpm;        // 다음에 감소시킬 rpm
   
   /* AHB */
   int brake_status;           // 회생제동 only / 회생제동+brake / brake only
@@ -41,7 +45,6 @@ variables
   
   /* BCAN */
   char regen_brake_level;   // 회생 제동 레벨 (0 ~ 3)
-  
 }
 
 void alive_check()
@@ -99,7 +102,7 @@ void BasicBrakeReq_func(void) // AHB
   message BasicBrakeReq msg;
   msg.Motor_RPM = motor_rpm;
   msg.Brake_Pedal_Active = brake_pedal_active;
-  msg.Brake_Pedal_Position = brake_pedal_position;
+  msg.Brake_Pedal_Position = brake_pedal_position > 100 ? 100 : brake_pedal_position;
   msg.Regen_Brake_Level = regen_brake_level;
   output(msg);
 }
@@ -115,34 +118,63 @@ void AccelPedalState_func(void)
 void MotorRpmUpdate_func(void)
 {
   message MotorRpmUpdate msg;
-  if(accel_pedal_position_flag == 1)
+  if(accel_pedal_position_flag == 1 && brake_pedal_active == 0)
   {
-    int max_rpm_increase = 300;  // 증가할 양
+    int target_rpm;
+    int diff_rpm;
+    int delta_rpm;
     
-    int rpm_increase;
-    rpm_increase = accel_pedal_position * max_rpm_increase * 0.002;
+    target_rpm = accel_pedal_position * 110;
+    target_rpm = output_limit == 1 && target_rpm > 7700 ? 7700 : target_rpm;
+    diff_rpm = target_rpm - motor_rpm;
+    delta_rpm = accel_pedal_position * 3 / 10;
     
-    msg.Motor_RPM = rpm_increase;
-    // msg.Motor_RPM = motor_rpm + accel_pedal_position; // 엑셀 밟으면 RPM 올려주기
+    if(diff_rpm == 0)
+      rpm_increase = 0;
+    
+    else if(diff_rpm > 0)
+    {
+      rpm_increase = diff_rpm > delta_rpm ? delta_rpm : diff_rpm; // rpm_increase = min(delta_rpm, diff_rpm);
+    }
+    else
+    {
+      rpm_increase = diff_rpm < -delta_rpm ? -delta_rpm : diff_rpm; // rpm_increase = max(-delta_rpm, diff_rpm);
+    }
   }
+  else
+  {
+    rpm_increase = 0;
+  }
+
+  msg.Motor_RPM = rpm_increase;
   output(msg);
 }
 
 void RegenToMcu_func(void) // 기계식 제동력도 주기
 {
   message RegenToMcu msg;
+  // int regen_motor_rpm;
+  
   if(brake_status == 0) // 회생제동만
   {
-    msg.Regen_Motor_RPM = regen_brake_force * 0.01; // 감소시킬 RPM 계산
+    regen_motor_rpm = regen_brake_force / 100; // 감소시킬 RPM 계산
   } 
   else if(brake_status == 1) // 회생 + 기계
   { 
-    msg.Regen_Motor_RPM = regen_brake_force * 0.01 + mech_brake_force * 0.01;
+    regen_motor_rpm = regen_brake_force / 100 + mech_brake_force / 60;
   }
   else // 기계식 브레이크만
   {
-    msg.Regen_Motor_RPM = mech_brake_force * 0.001;
+    regen_motor_rpm = mech_brake_force / 60;
   }
+  
+  if(brake_pedal_active == 1 && regen_motor_rpm == 0 )
+  {
+    regen_motor_rpm = 2; 
+  }
+  
+  msg.Regen_Motor_RPM = regen_motor_rpm;
+  
   output(msg); // 메시지 출력 (VCU -> MCU)
 }
 
@@ -153,8 +185,9 @@ void MCURpmLimit_func(void)
   output(msg);
 }
 
-void output_50ms()
+void output_20ms()
 {
+  write("brake_status %d, cur_mode : %d",brake_status, mode_status);
   RegenBrakeReq_func();
   
   BasicBrakeReq_func();
@@ -162,11 +195,7 @@ void output_50ms()
   AccelPedalState_func(); // MCU
   
   MotorRpmUpdate_func(); // MCU
-}
-
-/* VCU(Tx) -> Other ECU(Rx) */
-void output_100ms()
-{
+  
   // 0x251
   PcanHealthyCheck_func();
   
@@ -177,12 +206,9 @@ void output_100ms()
   MCURpmLimit_func(); // MCU
   
   BatterySocUpdate_func();
-}
+  
+  TransmitCarSpeed();// ccan
 
-void output_200ms()
-{
-  // 0x271
-  // BatterySocUpdate_func();
 }
 
 // Tx Cyclic message
@@ -191,16 +217,15 @@ on timer message_timer_10ms
   timer_cnt++;
   alive_cnt++;
   
-  if(alive_cnt >= 30)       // 300ms 지남
+  write("alive flag : %d", alive_flag);
+  if(alive_cnt >= 3 && mode_status != 2) // cont'd
   {
     // 0x201
     mode_status = 2;
     PcanModeStatus_func(mode_status);
   }
   
-  if(timer_cnt % 1 == 0) {output_50ms();}
-  if(timer_cnt % 2 == 0) {output_100ms();}
-  if(timer_cnt % 5 == 0) {output_200ms();}
+  if(timer_cnt % 2 == 0) {output_20ms();}
 }
 
 /* Initialize */
@@ -252,6 +277,7 @@ on message Pcan::BatteryMonitoring0
       output_limit = 0;
       mode_status = 0;
     }
+    battery_hvac = battery_temp < 20 ? 2 : battery_temp > 40 ? 1 : 0;
   }
 }
 
@@ -297,9 +323,43 @@ on message PCAN::MotorRpmMonitoring // MCU
 
 on message PCAN_TEMP
 {
-  accel_pedal_position = this.Accel_Pedal_Position.phys;
+  accel_pedal_position = this.Accel_Pedal_Position.phys ;
+  brake_pedal_position = this.Brake_Pedal_Position.phys ;
   accel_pedal_position_flag = this.Accel_Pedal_Position_Flag.phys;
-  brake_pedal_position = this.Brake_Pedal_Position.phys;
   brake_pedal_active = this.Brake_Pedal_Active.phys;
   regen_brake_level = this.Regen_Brake_Level.phys;
+}
+
+void TransmitCarSpeed(void){ // 20ms rpm -> 속도 변환
+ cur_car_speed = convertRPMtoSpeed(motor_rpm); // 현재 속도
+ next_car_speed = convertRPMtoSpeed(motor_rpm - regen_motor_rpm + rpm_increase) ; // 다음 속도
+
+  // write("%d %d %d -%d +%d", cur_motor_speed, next_motor_speed , motor_rpm, regen_motor_rpm ,rpm_increase);
+
+}
+
+
+long convertRPMtoSpeed(int rpm){
+  long v;
+  v = rpm;
+  
+  v = (v * 65535) / 11000; // rpm(0~11000)을 speed(0~65535)로 linear하게 mapping
+  
+  return v;
+  
+  // int64 같은 자료형 사용?
+  /*
+  long v;
+  float f_rpm; 
+  f_rpm = (float)(rpm);
+  //write("cal1 :%d %f %lf",rpm, f_rpm, f_rpm);
+  
+  // 0.45 = 휠 반지름
+  // g : 기어비 10
+  f_rpm = (f_rpm * 2.0 * 3.14159 * 0.45);
+  v = (long)(f_rpm / (60.0 * 10.0)); 
+  
+  //write("cal2 :%f %d %d",f_rpm, v, v * 5);
+  v *= 5;
+  */
 }

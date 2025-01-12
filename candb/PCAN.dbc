@@ -39,6 +39,20 @@ BU_: VCU BMU AHB MCU
 BO_ 3221225472 VECTOR__INDEPENDENT_SIG_MSG: 0 Vector__XXX
  SG_ Regen_Brake_Status : 0|1@1+ (1,0) [0|1] "" Vector__XXX
 
+BO_ 560 SpeedResp: 4 VCU
+ SG_ Next_Motor_Speed : 16|15@1+ (1,0) [0|26000] "" Vector__XXX
+ SG_ Cur_Motor_Speed : 0|15@1+ (1,0) [0|26000] "" Vector__XXX
+
+BO_ 768 PCAN_TEMP: 3 VCU
+ SG_ Regen_Brake_Level : 16|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ Brake_Pedal_Position : 9|7@1+ (1,0) [0|100] "" Vector__XXX
+ SG_ Brake_Pedal_Active : 8|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ Accel_Pedal_Position_Flag : 7|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ Accel_Pedal_Position : 0|7@1+ (1,0) [0|100] "" Vector__XXX
+
+BO_ 514 MCURpmLimit: 1 VCU
+ SG_ Output_Limit : 0|1@1+ (1,0) [0|1] ""  MCU
+
 BO_ 593 PcanHealthyCheck: 1 VCU
  SG_ Pcan_Healty_Check : 0|1@1+ (1,0) [0|1] ""  AHB,BMU,MCU
 
@@ -70,7 +84,7 @@ BO_ 561 BasicBrakeReq: 3 VCU
  SG_ Regen_Brake_Level : 22|2@1+ (1,0) [0|3] ""  AHB
  SG_ Motor_RPM : 8|14@1+ (1,0) [0|11000] ""  AHB
  SG_ Brake_Pedal_Position : 1|7@1+ (1,0) [0|100] ""  AHB
- SG_ Brake_Pedal_Active : 0|1@1+ (1,0) [0|1] ""  AHB
+ SG_ Brake_Pedal_Active : 0|1@1+ (1,0) [0|1] ""  MCU,AHB
 
 BO_ 565 RegenBrakeReq: 3 VCU
  SG_ Regen_Brake_Level : 1|2@1+ (1,0) [0|3] ""  AHB
@@ -81,7 +95,7 @@ BO_ 598 BatteryTempUpdate: 1 VCU
  SG_ Battery_HVAC : 0|2@1+ (1,0) [0|2] ""  BMU
 
 BO_ 563 MotorRpmUpdate: 2 VCU
- SG_ Motor_RPM : 0|14@1+ (1,0) [0|11000] ""  MCU
+ SG_ Motor_RPM : 0|15@1- (1,0) [-11000|11000] ""  MCU
 
 BO_ 562 AccelPedalState: 8 VCU
  SG_ Accel_Pedal_Position_Flag : 7|1@1+ (1,0) [0|1] ""  MCU
@@ -96,7 +110,7 @@ BO_ 564 BrakeResp: 4 AHB
  SG_ Brake_Status : 14|2@1+ (1,0) [0|2] ""  VCU
 
 BO_ 566 BatteryMonitoring0: 4 BMU
- SG_ Output_Limit : 7|1@1+ (1,0) [0|1] ""  VCU,MCU
+ SG_ Output_Limit : 7|1@1+ (1,0) [0|1] ""  VCU
  SG_ Battery_Volt : 16|10@1+ (1,0) [0|1000] ""  VCU
  SG_ Battery_Temp : 8|8@1+ (1,-50) [-50|150] ""  VCU
  SG_ Battery_SOH : 0|7@1+ (1,0) [0|100] ""  VCU

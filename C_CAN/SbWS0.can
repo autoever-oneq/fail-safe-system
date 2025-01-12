@@ -39,7 +39,7 @@ variables
   };
   byte isDriverCmdOk=0;
   
-  byte isPrimary=0;
+  byte isPrimary=1;
   byte MachineState=0;
   
   long SteerDriverAngle=0;
@@ -208,10 +208,12 @@ on sysvar Chassis::DriverSteerAngle{
 }
 }
 
+//   }
+  
   
 on timer SbWS_timer
 {
-  if(isPrimary)
+    if(isPrimary)
     @sysvar::Chassis::WheelAngle=_100xSteerAngle;
   else
     _100xSteerAngle=@sysvar::Chassis::WheelAngle;
@@ -242,10 +244,10 @@ on timer SbWS_timer
     @sysvar::Chassis::DriverSteerAngle =SteerDriverAngle;
      }
     
-      
-    TransmitSteerCommand1(); // 액츄에이터에 연산 결과(조향각) 송신
-    TransmitDriverStatus1();
-    TransmitSensor1FailStatus();
+    TransmitSteerCommand0(); // 액츄에이터에 연산 결과(조향각) 송신
+    
+    TransmitDriverStatus0();
+    TransmitSensor0FailStatus();
     TransmitStatus();
   }
 }
@@ -458,8 +460,8 @@ void TransmitStatus(){
 }
 
   
- void TransmitDriverStatus1(){
-   message SteerDriverState1 DriverState;
+ void TransmitDriverStatus0(){
+   message SteerDriverState0 DriverState;
    DriverState.SteerDriverAngle.phys = SteerDriverAngle;
    DriverState.SteerDriverTorque.phys =SteerDriverTorque;
    
@@ -467,19 +469,19 @@ void TransmitStatus(){
    
  }
  
- void TransmitSensor1FailStatus(){
-   message SteerSensor1FailStatus FailStatus;
+ void TransmitSensor0FailStatus(){
+   message SteerSensor0FailStatus FailStatus;
    FailStatus.SbWS_FailCount.phys=SbWS_FailCount;
   FailStatus.SbWS_FailInfo.phys = SbWS_FailInfo;   
    Transmit(FailStatus);
  } 
 
-void TransmitSteerCommand1(){
-  message SteerCommand1 cmd;
+void TransmitSteerCommand0(){
+  message SteerCommand0 cmd;
   cmd.SteerAngle.phys = _100xSteerAngle;
   cmd.SteerWheelTorque.phys=SteerWheelTorque;
   cmd.SteerConnectionState.phys = SteerConnectionState;
-  write("ECU : %d,Current Speed : %d, Steer Angle : %d, Driver Angle : %d \n" ,1, carspeed,_100xSteerAngle,SteerDriverAngle);
+  write("ECU : %d,Current Speed : %d, Steer Angle : %d, Driver Angle : %d \n" ,0, carspeed,_100xSteerAngle,SteerDriverAngle);
   Transmit(cmd);
   
 }
@@ -501,6 +503,7 @@ on key 's'{
 }
 
 on key 'c'{
-  isPrimary = !isPrimary;
-  ecuisPrimary = isPrimary;
+    isPrimary = !isPrimary;
+    ecuisPrimary = !isPrimary;
+  
 }

@@ -12,16 +12,20 @@ variables
   int brake_status = 0;
   int regen_brake_force = 0;
   int mech_brake_force = 0;
-  int ahb_alive_flag = 0;
   int motor_rpm = 0;
   char accel_pedal_input_flag = 0;
   int regen_brake_level = 0;
   int brake_pedal_active = 0;
   int brake_pedal_position = 0;
-  int mode_status = 0;
   char pcan_healty_check = 0;
   
   float regen_brake_level_arr[4] = {0, 0.6, 0.7, 0.8};
+  
+  // ECU 정상 상태 flag (0, 1)
+  char alive_flag = 1;
+  
+  // 주행 상태 flag (0 : 일반, 1 : 주의, 2 : 긴급)
+  char mode_status;
 }
 
 void BrakeResp_func(void)
@@ -30,8 +34,10 @@ void BrakeResp_func(void)
   {
     message BrakeResp msg;
     msg.Brake_Status = brake_status;
-    msg.Mech_Brake_Force = mech_brake_force; // 0 ~ 8000
-    msg.Regen_Brake_Force = regen_brake_force; // 0 ~ 2000
+    
+    msg.Mech_Brake_Force = (motor_rpm > 0) * mech_brake_force; // 0 ~ 8000
+    msg.Regen_Brake_Force = (motor_rpm > 0) * regen_brake_force; // 0 ~ 2000
+    
     output(msg);
   }
 }
@@ -45,7 +51,7 @@ on start
 on timer counter_10ms // VCU에 RPM 보내기, 긴급모드에도 보내기
 { 
   ++cnt;
-  if(cnt % 5 == 0) BrakeResp_func(); // 50ms 주기
+  if(cnt % 2 == 0) BrakeResp_func(); // 50ms 주기
 }
 
 on message PCAN::RegenBrakeReq // 엑셀 밟다 땐 경우(주기 메세지)
@@ -86,7 +92,7 @@ on message PCAN::BasicBrakeReq // 주행 중 브레이크 밟음(주기 메세�
     
     if(brake_pedal_active == 1) // 브레이크 밟음
     {
-      tot_force = (long)motor_rpm * (long)brake_pedal_position;
+      tot_force = (long)brake_pedal_position * 11000;
       if(brake_pedal_position >= 75 || regen_brake_level == 0) // 75 크거나 회생레벨 0일 때
       {
         mech_brake_force = tot_force / 140; // 7857
@@ -110,13 +116,21 @@ on message PCAN::BasicBrakeReq // 주행 중 브레이크 밟음(주기 메세�
 
 on message PCAN::PcanModeStatus
 {
-  if(this.Mode_Status == 2){ // 긴급인 경우 ==> cont'd
-  }
+  mode_status = this.Mode_Status;
+  
+  if(mode_status == 2)
+    cancelTimer(counter_10ms);
 }
 
 on message PCAN::PcanHealthyCheck // ECU 체크
 {
   message AHBAlive msg;
-  msg.AHB_Alive_Flag = 1;
+  msg.AHB_Alive_Flag = alive_flag;
   output(msg);
+}
+
+/* Test */
+on key '['
+{
+  alive_flag ^= 1;
 }

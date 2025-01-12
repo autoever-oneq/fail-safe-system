@@ -8,7 +8,7 @@ includes
 variables
 {
   msTimer message_timer_10ms; // 주기 메시지를 위한 타이머
-  int timer_cnt = 0;          // 타이머 카운터
+  int timer_cnt;              // 타이머 카운터
   
   const int battery_capacity = 100; // 배터리 최대 용량
   const int energy_efficiency = 5;  // 전비
@@ -19,8 +19,8 @@ variables
   int battery_temp;       // 배터리 온도 (-50 ~ 150)
   
   // ECU 정상 상태 flag (0, 1)
-  enum Bmu_Alive_Flag {BAD, OK};
-  enum Bmu_Alive_Flag bmu_alive_flag;
+  enum Alive_Flag {BAD, OK};
+  enum Alive_Flag alive_flag;
   
   // 배터리 냉각 & 히터 시스템 flag (0 : 작동 x, 1 : 냉각 on, 2 : 히터 on)
   enum Battery_Hvac {NONE, COOLING, HEATING};
@@ -38,12 +38,14 @@ variables
 /* Initialize */
 on preStart
 {
+  timer_cnt = 0;
+  
   battery_volt = 700;
   battery_soh = 100;
-  battery_soc = 3000; // 10000
+  battery_soc = 10000; // / 100(%)
   battery_temp = 30;
   
-  bmu_alive_flag = OK;
+  alive_flag = OK;
   battery_hvac = NONE;
   mode_status = NORMAL;
   output_limit = NORMAL_BAT;
@@ -90,28 +92,33 @@ void RemainingRangeCal_func()
   output(msg);
 }
 
-void output_30ms()
+// 20ms func
+void output_20ms()
 {
-  // 0x211
-  BatteryMonitoring0_func();
+  BatteryMonitoring0_func();  // 0x211
+  BatteryMonitoring1_func();  // 0x236
+  RemainingRangeCal_func();   // 0x272
 }
-void output_50ms()
-{
-  // 0x236
-  BatteryMonitoring1_func();
-}
+
+// 200ms func
 void output_200ms()
 {
-  // 0x272
-  RemainingRangeCal_func();
+  // 배터리 온도를 200ms마다 확인
+  battery_temp += (battery_hvac == HEATING) - (battery_hvac == COOLING);  // 1도씩 변화
+  
+  if(battery_temp < 20)
+    battery_hvac = HEATING;
+  else if(battery_temp > 40)
+    battery_hvac = COOLING;
+  else
+    battery_hvac = NONE;
 }
 
 // Tx Cyclic message
 on timer message_timer_10ms
 {
   ++timer_cnt;
-  if(timer_cnt % 3 == 0) {output_30ms();}
-  if(timer_cnt % 5 == 0) {output_50ms();}
+  if(timer_cnt % 2 == 0) {output_20ms();}
   if(timer_cnt % 20 == 0) {output_200ms();}
 }
 
@@ -133,6 +140,9 @@ on message PcanModeStatus
     default:
       mode_status = EMERGENCY;
   }
+  
+  if(mode_status == EMERGENCY)
+    cancelTimer(message_timer_10ms);
 }
 
 // 0x271
@@ -174,21 +184,28 @@ on message BatteryTempUpdate
 // 0x251
 on message PcanHealthyCheck
 {
-  if(mode_status != EMERGENCY)      // Not emergency
-  {
-    message BMUAlive alive;
-    alive.BMU_Alive_Flag = 1;
-    output(alive);
-  }
+  message BMUAlive alive;
+  alive.BMU_Alive_Flag = alive_flag;
+  output(alive);
 }
 
 /* End */
-on preStop
+on preStop {}
+
+on stopMeasurement {}
+
+/* Test */
+on key ','
 {
-  
+  battery_temp = 0;
 }
 
-on stopMeasurement
+on key '.'
 {
-  
+  battery_temp = 60;
+}
+
+on key '/'
+{
+  alive_flag = alive_flag == OK ? BAD : OK;
 }
