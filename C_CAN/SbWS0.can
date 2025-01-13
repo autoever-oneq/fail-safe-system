@@ -9,12 +9,11 @@ variables
   msTimer SbWS_timer;
   timer Reset_T;
   byte is_off=0;
-  byte pSen=0;
   
   // VCU's
   byte SbWS_Machinstate =0;
   word ecuStatusMsgCnt =0;
-  byte primaryBus =5;
+  byte primaryBus =0;
   byte SbWS_FailCount;
   byte SbWS_FailInfo;
   
@@ -27,20 +26,21 @@ variables
   // Self Data
   
   enum HealthyCan{
-    NONE,
+    BOTH=0,
     BUS1,
     BUS2,
-    BOTH
+    NONE
   };
   
   byte isPrimary=1;
   byte MachineState=0;
   
   long SteerDriverAngle=0;
-  int SteerDriverTorque=0;
+  int _100xSteerDriverTorque=0;
   
   long _100xSteerAngle=0;  //updated Angle;
   long _100xSteerAngleBefore=0; //currernt Angle
+  
   long targetAngle =0; 
   long restoreAngle;
   
@@ -79,13 +79,7 @@ on start
 }
 
 on timer Reset_T{
-  is_off=0;
-  isPrimary =0;
-  SbWS_Machinstate =0;
-  ecuStatusMsgCnt =0;
-  primaryBus =1;
-  SbWS_FailCount=0;
-  SbWS_FailInfo=0;
+  HardReset();
 }
 
 on message DriveModeStatus{
@@ -140,11 +134,12 @@ on message SbWA1_Status{
 
 
 on message CommandResetSteer{
-   if(MachineState == !MALFUNCTION_TRANSCEIVER_ERR){
+   if(MachineState == MALFUNCTION_TRANSCEIVER_ERR){
   if(this.HardResetSbWS0){
     write("[+] SbWS0 Hard Reset");
     MachineState = MALFUNCTION_TRANSCEIVER_ERR;
-    HardReset();
+    is_off =1;
+    setTimer(Reset_T,3); 
  }
    }
 }
@@ -152,17 +147,7 @@ on message CommandResetSteer{
 
 on message CANHealthyCheck{
    if(MachineState == !MALFUNCTION_TRANSCEIVER_ERR){
-      if(this.CAN1Healthy){
-        primaryBus =BUS1;   
-        if(this.CAN2Healthy){
-            primaryBus = BOTH; 
-          }
-        }
-    else{
-      primaryBus =BUS2; 
-      if(!this.CAN2Healthy)
-        primaryBus = NONE;
-      }
+     primaryBus = ((this.CAN1Healthy * 2) + (this.CAN2Healthy * 1));
    }
 }
 
@@ -232,6 +217,7 @@ on timer SbWS_timer
       else{
       restoreAngle = CalcRestoreAngle(_100xSteerAngle, carspeed);
         _100xSteerAngle += restoreAngle;
+        _100xSteerDriverTorque=restoreAngle;
         SteerDriverAngle = (_100xSteerAngle * 15) /100;
         _100xSteerAngleBefore=_100xSteerAngle;
         targetAngle=0;
@@ -241,7 +227,6 @@ on timer SbWS_timer
      }
     
     TransmitSteerCommand0(); // 액츄에이터에 연산 결과(조향각) 송신
-    
     TransmitDriverStatus0();
     TransmitSensor0FailStatus();
     TransmitStatus();
@@ -414,13 +399,20 @@ void CalcAngle() {
          theta = targetAngle; 
         }
     _100xSteerAngle=theta;
+        _100xSteerDriverTorque = myabs(_100xSteerAngleBefore-_100xSteerAngle);
     _100xSteerAngleBefore=_100xSteerAngle;
 }
 
 
 void HardReset(){
- is_off =1;
- setTimer(Reset_T,3); 
+  is_off=0;
+  isPrimary = 0;
+  SbWS_Machinstate =0;
+  ecuStatusMsgCnt =0;
+  primaryBus = 0;
+  SbWS_FailCount=0;
+  SbWS_FailInfo=0; 
+  MachineState = MALFUNCTION_NONFAULT;
 }
 
 
@@ -447,17 +439,21 @@ void reCtrl(){ // Called when Take SteerWheel During Restoring Steer
 
 
 void Transmit(message * msg) {
-  if(MachineState == MALFUNCTION_TRANSCEIVER_ERR)
+  if (MachineState == MALFUNCTION_TRANSCEIVER_ERR) {
     return;
-  if(primaryBus==3) {
-      msg.can=5;
+  }
+  if(primaryBus==NONE)
+    return;
+  
+  if(primaryBus==BOTH) {
+      msg.can=1;
       output(msg);
-      msg.can=6;
+      msg.can=2;
       output(msg);
       }
   else
   {
-    msg.can=5;
+    msg.can=primaryBus;
     output(msg);
   }
 }
@@ -468,9 +464,10 @@ void Transmit(message * msg) {
 void TransmitStatus(){
   message SbWS0_Status status;
   status.EcuIsPrimary.phys=isPrimary;
-  status.SbWS_MachineState.phys=MachineState;
+  status.SbWS_MachineState.phys=modeState;
   status.EcuStatusMsgCount.phys=ecuStatusMsgCnt;
-  status.PrimaryBus.phys=primaryBus;  
+  status.PrimaryBus.phys=primaryBus;
+  
   Transmit(status);
   if(!MALFUNCTION_TRANSCEIVER_ERR)
     ecuStatusMsgCnt++;
@@ -480,7 +477,7 @@ void TransmitStatus(){
  void TransmitDriverStatus0(){
    message SteerDriverState0 DriverState;
    DriverState.SteerDriverAngle.phys = SteerDriverAngle;
-   DriverState.SteerDriverTorque.phys =SteerDriverTorque;
+   DriverState.SteerDriverTorque.phys =_100xSteerDriverTorque;
    
    Transmit(DriverState);
    
@@ -498,29 +495,21 @@ void TransmitSteerCommand0(){
   cmd.SteerAngle.phys = _100xSteerAngle;
   cmd.SteerWheelTorque.phys=SteerWheelTorque;
   cmd.SteerConnectionState.phys = SteerConnectionState;
-  write("ECU : %d, Primary :%d , Current Speed : %d, Steer Angle : %d, Driver Angle : %d \n" ,0,pSen, carspeed,_100xSteerAngle,SteerDriverAngle);
+  // write("ECU : %d, Primary :%d , Current Speed : %d, Steer Angle : %d, Driver Angle : %d \n" ,0,pSen, carspeed,_100xSteerAngle,SteerDriverAngle);
   Transmit(cmd);
   
 }
 
 
-
-
 on key 'l' {
  isHandleOn = !isHandleOn;
-}
-on key 'w'{
-  carspeed+=10;
-  write("speed : %d",carspeed);
 }
 on key 's'{
   carspeed-=10;
     write("speed : %d",carspeed);
 }
 
-on key 'c'{
-    isPrimary = !isPrimary;
-  
-    pSen = isPrimary ? 0 : 1; 
-  
+on key '5' {
+  MachineState = MALFUNCTION_TRANSCEIVER_ERR;
+  setTimer(Reset_T, 3);
 }

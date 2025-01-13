@@ -512,7 +512,7 @@ void ModifyMachineStatus(enum MachineState state) {
   g_bbwaStatus.state = state;
   
   if (g_bbwaStatus.state == EMERGENCY) {
-    g_brakeCommand.activeBrakePressure = BRAKE_PRESSURE_HIGH_LIMIT;
+    g_brakeCommand.activeBrakePressure = 2000;
     g_brakeCommand.pedalState = PEDAL_ACTIVE;
     ActuateBrake();
   }
@@ -606,6 +606,19 @@ void MechanicalBrake() {
 
 void CalculateWheelSpeed() {
   g_brakeFeedback.wheelSpeed = (g_speed_cmp10ms * SECOND_TO_10MS * MINUITE_TO_SECOND) / (2 * pi * TYRE_RADIUS_CM);
+}
+
+on message 0x000 {
+  if (g_bbwaStatus.primaryBus == BOTH) {
+    g_bbwaStatus.primaryBus = (this.can == 1) ? CAN_2 : CAN_1;
+  }
+  else if (g_bbwaStatus.primaryBus != this.can) {
+    return;
+  }
+  else {
+    g_bbwaStatus.primaryBus = NEITHER;
+    ModifyMachineStatus(EMERGENCY);
+  }
 }
 
 on key 'g' {

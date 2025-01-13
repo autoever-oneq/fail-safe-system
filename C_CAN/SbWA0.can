@@ -15,9 +15,9 @@ variables
   byte ecuisPrimary=0;  // start with Act 0 Primary
   byte SbWS_Machinstate =0;
   word ecuStatusMsgCnt =0;
-  byte primaryBus =5;
+  byte primaryBus =0;
   byte is_off =0 ;
-  byte isPrimary=0;
+  byte isPrimary=1;
   
   
   byte SbWA_FailCount;
@@ -48,11 +48,11 @@ variables
     MALFUNCTION_TRANSCEIVER_ERR,
     MALFUNCTION_LOGIC_ERR
   };
-   enum HealthyCan{
-    NONE,
+ enum HealthyCan{
+    BOTH=0,
     BUS1,
     BUS2,
-    BOTH
+    NONE
   };
   
   byte error=MALFUNCTION_NONFAULT;
@@ -64,32 +64,29 @@ on start{
   
 }
 
+on message DriveModeStatus{
+  modeState = this.ModeState;
+    if (modeState == 0) {
+        //Normal
+    } 
+    else if (modeState == 1) { 
+        //caution
+    } 
+    else if (modeState == 2) {
+        // Emergency
+    } 
+    else {
+        // 
+    }
+}
 on timer Reset_T{
-  is_off = 0;
-  
-  error=MALFUNCTION_NONFAULT;
-  
-  ecuisPrimary=1;
-  isPrimary=0;
-  SbWS_Machinstate =0;
-  ecuStatusMsgCnt =0;
-  primaryBus =0;
-  steerFeedbackAngle=0;
-  SbWA_FailCount=0;
-  SbWA_FailInfo=0;
-  
-  CommandLost =0;
+  HardReset();
 }
 
 on timer SbWA0_T{
   if(!is_off){ // 10ms Task
     TimerCounter++;
-    CommandLost++;
-    if(CommandLost >=3){
-      is_off=1;
-      setTimer(Reset_T,3);
-      // Didn't reciecve any Control messages from Both Sensor 3 Times -> reboot
-    }
+    
     TransmitStatus();
   
     if(TimerCounter==2){  //20ms Task
@@ -101,35 +98,42 @@ on timer SbWA0_T{
 }
 
 on message SbWS0_Status{
+  if(error == MALFUNCTION_TRANSCEIVER_ERR)
+    return;
   
   pSen = this.EcuIsPrimary ? 0 : 1;
 }
 
 on message SbWS1_Status{
+  if(error == MALFUNCTION_TRANSCEIVER_ERR)
+    return;
+  
   pSen = this.EcuIsPrimary ? 1 : 0;
 }
 
 on message SetSteer{
-  if(error==MALFUNCTION_LOGIC_ERR)
+  if(error == MALFUNCTION_TRANSCEIVER_ERR)
     return;
   
-  if(error==MALFUNCTION_TRANSCEIVER_ERR)
-    return;
-  
-  ecuisPrimary = this.SetPrimaryActuatorSteer ? 0 : 1;
-  isPrimary = ecuisPrimary ? 0 : 1 ;
+  isPrimary = this.SetPrimaryActuatorSteer ? 0: 1 ;
 }
 
 on message CommandResetSteer{
   if(error==MALFUNCTION_TRANSCEIVER_ERR)
     return;
+  
   if(this.HardResetSbWA0){
+    write("[+] SbWA0 Hard Reset");
+    error = MALFUNCTION_TRANSCEIVER_ERR;
     is_off =1;
-    HardReset();
+    setTimer(Reset_T,3); 
   }
 }
 
 on message SteerCommand0{
+  if(error == MALFUNCTION_TRANSCEIVER_ERR)
+    return;
+  
   if(pSen == 1)
     return;
   ActuateSteer(this.SteerAngle);
@@ -137,39 +141,33 @@ on message SteerCommand0{
 }
 
 on message SteerCommand1{
+  if(error == MALFUNCTION_TRANSCEIVER_ERR)
+    return;
+  
   if(pSen == 0)
     return;
   ActuateSteer(this.SteerAngle);
   CommandLost =0;   
 }
 
-
-
 on message CANHealthyCheck{
-  if(error==MALFUNCTION_TRANSCEIVER_ERR)
-    return;
-  
- if(!this.CAN1Healthy){
-   if(!this.CAN2Healthy){
-      primaryBus = NONE; 
-    }
-    else{
-      primaryBus =BUS2;   
-    }
- }
- else{
-   if(!this.CAN2Healthy){
-      primaryBus = BUS1; 
-    }
-    else
-     primaryBus = BOTH;    
- }
+   if(error == !MALFUNCTION_TRANSCEIVER_ERR){
+     primaryBus = ((this.CAN1Healthy * 2) + (this.CAN2Healthy * 1));
+   }
 }
 
-
 void HardReset(){
- is_off =1;
- setTimer(Reset_T,3); 
+  is_off = 0;
+  error=MALFUNCTION_NONFAULT;
+  isPrimary=0;
+  SbWS_Machinstate =0;
+  ecuStatusMsgCnt =0;
+  primaryBus =0;
+  steerFeedbackAngle=0;
+  SbWA_FailCount=0;
+  SbWA_FailInfo=0;
+  
+  CommandLost =0;
 }
 
 void ActuateSteer(long CmdAngle){
@@ -184,26 +182,27 @@ void ActuateSteer(long CmdAngle){
 
 
 void Transmit(message * msg) {
-  if(error==MALFUNCTION_TRANSCEIVER_ERR)
+  if(error == MALFUNCTION_TRANSCEIVER_ERR)
     return;
-  
-  if(primaryBus==3) {
-    msg.can=5;
-    output(msg);
-    msg.can=6;
-    output(msg);
-  }
+  if(primaryBus == NONE)
+    return;
+  if(primaryBus==BOTH) {
+      msg.can=1;
+      output(msg);
+      msg.can=2;
+      output(msg);
+      }
   else
   {
-   msg.can=5;
+    msg.can=primaryBus;
     output(msg);
   }
 }
 
 void TransmitStatus(){
   message SbWA0_Status status;
-  status.EcuIsPrimary.phys = ecuisPrimary;
-  status.SbWA_MachineState.phys =SbWS_Machinstate;
+  status.EcuIsPrimary.phys = isPrimary;
+  status.SbWA_MachineState.phys =modeState;
   status.EcuStatusMsgCount.phys = ecuStatusMsgCnt;
   status.PrimaryBus.phys = primaryBus;
   Transmit(status);
@@ -211,11 +210,10 @@ void TransmitStatus(){
 }
 
 void TransmitSteerFeedback(){
-  if(isPrimary){
   message SteerFeedback0 feedback;
   feedback.SteerFeedbackAngle.phys = steerFeedbackAngle;
   Transmit(feedback);
-  }
+
 }
 
 void TransmitSteerActFailStatus(){
@@ -225,3 +223,7 @@ void TransmitSteerActFailStatus(){
   Transmit(Failstatus);  
 }
 
+on key '7' {
+  error = MALFUNCTION_TRANSCEIVER_ERR;
+  setTimer(Reset_T, 3);
+}

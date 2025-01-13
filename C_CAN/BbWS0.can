@@ -399,7 +399,7 @@ on message WheelStatus1 {
   if (g_malfunctionState == MALFUNCTION_TRANSCEIVER_ERR) {
     return;
   }
-  
+    
 }
 
 
@@ -544,4 +544,5 @@ void CalculateBrakePressure() {
 
 on key 'n' {
   g_malfunctionState = MALFUNCTION_TRANSCEIVER_ERR; 
+  setTimer(g_resetTimer, 3000);
 }

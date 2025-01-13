@@ -237,16 +237,17 @@ variables
   };
   
   int g_lastMsgCan = 1;
+  byte g_vcuOn = 0;
   
 }
 
 on start {
-  //setTimerCyclic(g_10msTimer, 10);
+  InitChassis();
+  setTimerCyclic(g_10msTimer, 10);
 }
 
 on key 'v' {
-  InitChassis();
-  setTimerCyclic(g_10msTimer, 10);
+  g_vcuOn = 1;
 }
 
 
@@ -602,6 +603,17 @@ void TransmitCANHealthyCheck() {
   C_Transmit(canHealthMsg);
 }
 
+void TransmitCanOver() {
+  message CANHealthyCheck canHealthMsg;
+  canHealthMsg.CAN1Healthy.phys = 1;
+  canHealthMsg.CAN2Healthy.phys = 1;
+  canHealthMsg.can = 1;
+  output(canHealthMsg);
+  
+  canHealthMsg.can = 2;
+  output(canHealthMsg);
+}
+
 void TransmitMechanicalBrakeStatus() {
   message MechanicalBrakeStatus mechaBrakeStatus;
   
@@ -643,6 +655,9 @@ void TransmitGearStatus() {
   Check Can Integrity when BOTH CAN buses are running
 */
 void CheckCanIntegrity(int canNumber, int msgId) {
+  
+  
+  /*
   if (g_ccanStatus.canAlive != BOTH) {
     return;
   }
@@ -670,6 +685,7 @@ void CheckCanIntegrity(int canNumber, int msgId) {
   else {
     g_ccanStatus.errCount = 0;
   }
+  */
 }
 
 void AppSchedule10ms() {
@@ -717,7 +733,7 @@ void InitEcuStatus() {
         g_ecuStatus[steer_brake][sensor_actuator][zero_one].failCount = 0;
         g_ecuStatus[steer_brake][sensor_actuator][zero_one].timestampLastAliveMsg = timestampNow;
         g_ecuStatus[steer_brake][sensor_actuator][zero_one].failState = ECU_NONFAIL;
-        g_ecuStatus[steer_brake][sensor_actuator][zero_one].ecuOnReset = 0;
+        g_ecuStatus[steer_brake][sensor_actuator][zero_one].ecuOnReset = 1;
       }
     }
   }
@@ -728,12 +744,15 @@ void ModifyMachineStatus(enum MachineState state) {
     case EMERGENCY:
       g_state = state;
       emergencyCount++;
+      write("[+] EMERGENCY MODE");
       break;
     case CAUTION:
       g_state = state;
+      write("[+] CAUTION MODE");
       break;
     default:
       g_state = state;
+      write("[+] NORMAL MODE");
       break;
   }
 }
@@ -776,7 +795,7 @@ void VerifyEcuStatus(enum XbyWire xbw, enum EcuType type, enum EcuNum num, struc
 
 void VerifySensorEcu(enum XbyWire xbw, enum EcuNum num, struct XbyWireStatus status) {
   // if primaryState is mismatched, retransmit
-  if (/*((g_primaryEcu[xbw].sensor == num) && status.isPrimary != 1) ||*/
+  if (((g_primaryEcu[xbw].sensor == num) && status.isPrimary != 1) ||
       ((g_primaryEcu[xbw].sensor != num) && status.isPrimary == 1)) {
     if (xbw == STEER_BY_WIRE) {
       TransmitSetSteer();
@@ -813,7 +832,7 @@ void VerifySensorEcu(enum XbyWire xbw, enum EcuNum num, struct XbyWireStatus sta
 
 void VerifyActuatorEcu(enum XbyWire xbw, enum EcuNum num, struct XbyWireStatus status) {
   // if primaryState is mismatched, retransmit
-  if (/*((g_primaryEcu[xbw].actuator == num) && status.isPrimary != 1) ||*/
+  if (((g_primaryEcu[xbw].actuator == num) && status.isPrimary != 1) ||
       ((g_primaryEcu[xbw].actuator != num) && status.isPrimary == 1)) {
     if (xbw == STEER_BY_WIRE) {
       TransmitSetSteer();
@@ -850,10 +869,14 @@ void VerifyActuatorEcu(enum XbyWire xbw, enum EcuNum num, struct XbyWireStatus s
   Check Ecu Failure every 10ms
 */
 void CheckChassisEcuFailure() {
-  byte failureCount = 0, maxFailureCount = 0;
+  byte failureCount = 0, maxFailureCount = 0, onResetCounter = 0;
   int steer_brake, sensor_actuator, ecuNumber;
   int failWire = 0, failType = 0, failNum = 0;
   long timestampNow;
+  
+  if (g_vcuOn == 0 || g_ccanStatus.canAlive == NEITHER) {
+    return;
+  }
   
   timestampNow = timeNow();
   for (steer_brake = 0; steer_brake < 2; steer_brake++) {
@@ -891,16 +914,23 @@ void CheckChassisEcuFailure() {
   
   for (steer_brake = 0; steer_brake < 2; steer_brake++) {
     for (sensor_actuator = 0; sensor_actuator < 2; sensor_actuator++) {
+      if (g_ecuStatus[steer_brake][sensor_actuator][NUMBER_0].ecuOnReset) {
+        onResetCounter++;
+      }
       if (g_ecuStatus[steer_brake][sensor_actuator][NUMBER_0].failState == ECU_FAIL) {
-        failureCount++;        
+        failureCount++;
         ReplacePrimaryEcu((enum XbyWire)steer_brake, (enum EcuType)sensor_actuator, NUMBER_0);
+      }
+      
+      if (g_ecuStatus[steer_brake][sensor_actuator][NUMBER_1].ecuOnReset) {
+        onResetCounter++;
       }
       if (g_ecuStatus[steer_brake][sensor_actuator][NUMBER_1].failState == ECU_FAIL) {
         failureCount++;
         ReplacePrimaryEcu((enum XbyWire)steer_brake, (enum EcuType)sensor_actuator, NUMBER_1);
       }
       
-      if (g_ecuStatus[steer_brake][sensor_actuator][NUMBER_0].ecuOnReset == 1 && g_ecuStatus[steer_brake][sensor_actuator][NUMBER_1].ecuOnReset == 1) {
+      if (onResetCounter == 2) {
         failureCount = 2;
       }
       
@@ -911,24 +941,31 @@ void CheckChassisEcuFailure() {
   
   if (maxFailureCount == 2 && g_state != EMERGENCY) {
     ModifyMachineStatus(EMERGENCY);
+    TriggerEcuReplacement();
     TransmitDriveModeStatus();
-    write("[!] EMERGENCY MODE");
   }
-  else if (maxFailureCount == 1) {
+  else if (maxFailureCount == 1 || g_ccanStatus.errCount == 1) {
     if (g_state != CAUTION) {
       TriggerEcuReplacement();
       ModifyMachineStatus(CAUTION);
       TransmitDriveModeStatus();
-      write("[!] CAUTION MODE");
     }
   }
   else if (maxFailureCount == 0) {
-    if (g_state == CAUTION) {
+    if (emergencyCount > 0) {
+      if (g_state != CAUTION) {
+        ModifyMachineStatus(CAUTION);
+        TransmitDriveModeStatus();
+      }
+    }
+    else if (g_state == CAUTION && onResetCounter == 0) {
       ModifyMachineStatus(NORMAL);
       TransmitDriveModeStatus();
-      write("[+] NORMAL MODE");
     }
   }
+  maxFailureCount = 0;
+  onResetCounter = 0;
+  //write("AAA %d", maxFailureCount);
 
 }
 
@@ -999,8 +1036,7 @@ void TriggerEcuReplacement() {
   g_primaryEcu[STEER_BY_WIRE].sensor = g_setSteer.setPrimarySensorSteer;
   g_primaryEcu[STEER_BY_WIRE].actuator = g_setSteer.setPrimaryActuatorSteer;
   g_primaryEcu[BRAKE_BY_WIRE].sensor = g_setBrake.setPrimarySensorBrake;
-  g_primaryEcu[BRAKE_BY_WIRE].actuator = g_setBrake.setPrimaryActuatorBrake;
-  
+  g_primaryEcu[BRAKE_BY_WIRE].actuator = g_setBrake.setPrimaryActuatorBrake;  
   
   g_commandResetSteer.hardResetSbWS0 = 0;
   g_commandResetSteer.hardResetSbWS1 = 0;
@@ -1051,3 +1087,22 @@ on key 'q' {
   write("%d", timeNow());
 }
 
+// CAN 무결성 침해 상황 (DoS, Physical Error)
+on message 0x000 {
+  if (g_ccanStatus.canAlive == BOTH) {
+    g_ccanStatus.errCount++;
+    g_ccanStatus.canAlive = (this.can == 1) ? CAN_2 : CAN_1;
+    ModifyMachineStatus(CAUTION);
+    TransmitDriveModeStatus();
+  }
+  else if (g_ccanStatus.canAlive != this.can) {
+    return;
+  }
+  else {
+    g_ccanStatus.errCount++;
+    ModifyMachineStatus(EMERGENCY);
+    TransmitDriveModeStatus();
+    TransmitCanOver();
+    g_ccanStatus.canAlive = NEITHER;
+  }
+}

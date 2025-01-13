@@ -542,8 +542,8 @@ void CalculateBrakePressure() {
   write("P: %lf, a: %lf, Fb: %lf", P, a, Fb);
 }
 
-/*
-on key 'n' {
+
+on key 'm' {
   g_malfunctionState = MALFUNCTION_TRANSCEIVER_ERR; 
+  setTimer(g_resetTimer, 3000);
 }
-*/

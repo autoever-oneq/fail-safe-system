@@ -22,15 +22,13 @@ on message PowertrainStatus {
 on key '1' {
   message * msg;
   msg.can = 1;
-  msg.id = 0x01;
-  
+  msg.id = 0x00;
   output(msg);
 }
 
 on key '2' {
   message * msg;
   msg.can = 2;
-  msg.id = 0x01;
-  
+  msg.id = 0x00;
   output(msg);
 }
