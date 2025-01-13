@@ -10,6 +10,7 @@ variables
   timer Reset_T;
   byte TimerCounter=0;
   byte CommandLost=0;
+  byte pSen=0;
   
   // VCU's
   byte ecuisPrimary=0;  
@@ -95,6 +96,14 @@ on timer SbWA1_T{
      }
   }
 }
+on message SbWS0_Status{
+  
+  pSen = this.EcuIsPrimary ? 0 : 1;
+}
+
+on message SbWS1_Status{
+  pSen = this.EcuIsPrimary ? 1 : 0;
+}
 
 on message SetSteer{
   if(error==MALFUNCTION_LOGIC_ERR)
@@ -116,11 +125,15 @@ on message CommandResetSteer{
 }
 
 on message SteerCommand0{
+    if(pSen == 1)
+    return;
   ActuateSteer(this.SteerAngle);
   CommandLost =0;
 }
 
 on message SteerCommand1{
+    if(pSen == 0)
+    return;
   ActuateSteer(this.SteerAngle);
   CommandLost =0;   
 }

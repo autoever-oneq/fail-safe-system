@@ -9,9 +9,9 @@ variables
   msTimer SbWS_timer;
   timer Reset_T;
   byte is_off=0;
+  byte pSen=0;
   
   // VCU's
-  byte ecuisPrimary=0;
   byte SbWS_Machinstate =0;
   word ecuStatusMsgCnt =0;
   byte primaryBus =5;
@@ -32,12 +32,6 @@ variables
     BUS2,
     BOTH
   };
-  
-  enum SteerOutRange{
-    IN,
-    OUT
-  };
-  byte isDriverCmdOk=0;
   
   byte isPrimary=1;
   byte MachineState=0;
@@ -86,7 +80,6 @@ on start
 
 on timer Reset_T{
   is_off=0;
-  ecuisPrimary =0;
   isPrimary =0;
   SbWS_Machinstate =0;
   ecuStatusMsgCnt =0;
@@ -121,14 +114,14 @@ on message SetSteer{
 }
 
 on message PowertrainStatus{
-   if(MachineState ==MALFUNCTION_TRANSCEIVER_ERR){
+   if(MachineState ==MALFUNCTION_TRANSCEIVER_ERR)
      return;
  carspeed=this.VehicleSpeed; 
-   }
 }
 
 on message SbWA0_Status{
    if(MachineState == MALFUNCTION_TRANSCEIVER_ERR)
+    return;
   if(this.EcuIsPrimary == 0){
    PrimaryAct=1; 
    }
@@ -149,6 +142,8 @@ on message SbWA1_Status{
 on message CommandResetSteer{
    if(MachineState == !MALFUNCTION_TRANSCEIVER_ERR){
   if(this.HardResetSbWS0){
+    write("[+] SbWS0 Hard Reset");
+    MachineState = MALFUNCTION_TRANSCEIVER_ERR;
     HardReset();
  }
    }
@@ -214,16 +209,17 @@ on sysvar Chassis::DriverSteerAngle{
 on timer SbWS_timer
 {
     if(isPrimary)
-    @sysvar::Chassis::WheelAngle=_100xSteerAngle;
-  else
-    _100xSteerAngle=@sysvar::Chassis::WheelAngle;
-  if(!is_off){
+      @sysvar::Chassis::WheelAngle=_100xSteerAngle;
+    else
+      _100xSteerAngle=@sysvar::Chassis::WheelAngle;
+  
+    if(!is_off){
   
     if(isHandleOn){
+      SteerDriverAngle= @sysvar::Chassis::DriverSteerAngle;
+      reCtrl();
       CalcAngle();
     }
-
-    
     else{
       
       if(abs(SteerDriverAngle) >abs( (_100xSteerAngle * 15)/100 )){
@@ -231,7 +227,7 @@ on timer SbWS_timer
         if(abs (SteerDriverAngle) - abs( (_100xSteerAngle * 15)/100 ) <=10 ) {
           SteerDriverAngle = (_100xSteerAngle * 15) /100 ;
         }
-      }   //10도씩 줄이다가 실제 휠 조향 각과 매치되면 그 때 부턴 조향각 복원 로직을 따름
+      }   //SteerWheel is restored linearly (10), then if it match with Real Steer, restore Naturally
       
       else{
       restoreAngle = CalcRestoreAngle(_100xSteerAngle, carspeed);
@@ -301,7 +297,7 @@ float myexp(float x) {
         return 1.0 + x + (x * x) / 2.0;  // x^1 / 1! + x^2 / 2! 정도로 간단히 근사
     }
 
-    // 테일러 급수의 첫 몇 항만 사용하여 근사
+    // 테일러 급수의 첫 두 항만 사용하여 근사
     result = 1.0;
     term = x;
     tolerance = 1e-6; // 오차 허용 범위
@@ -373,12 +369,10 @@ float myabs(float x) {
 
 
 float calc_K() {
-  
-    // 속도에 따른 k 값 계산 (0.01 ~ 0.07)
     float k;
     k= 0.0005 * carspeed + 0.01;
 
-    // k가 범위를 벗어나지 않도록 제한
+    //  {k| 0.01<= k <= 0.07}
     if (k > 0.07) k = 0.07;
     if (k < 0.01) k = 0.01;
     return k;
@@ -387,8 +381,6 @@ float calc_K() {
 void CalcAngle() {
   float theta_bf;
   float theta;
-  
-  
   
   theta_bf=_100xSteerAngleBefore;
     if (carspeed >= 40 && carspeed < 80) {
@@ -432,6 +424,28 @@ void HardReset(){
 }
 
 
+void reCtrl(){ // Called when Take SteerWheel During Restoring Steer
+ targetAngle = (SteerDriverAngle*100)/15;
+    
+    if(carspeed>=80){
+      if (abs(targetAngle) > 1000) {
+        targetAngle= (targetAngle < 0) ? -1000 : 1000; 
+      } 
+    }
+  else if(carspeed <80 && carspeed >=40){
+    if (abs(targetAngle) > 2000) {
+        targetAngle= (targetAngle < 0) ? -2000 : 2000; 
+      } 
+    }
+    else{
+      if (abs(targetAngle) > 6000) {
+        targetAngle= (targetAngle < 0) ? -6000 : 6000; 
+      } 
+    } 
+  
+}
+
+
 void Transmit(message * msg) {
   if(MachineState == MALFUNCTION_TRANSCEIVER_ERR)
     return;
@@ -448,12 +462,15 @@ void Transmit(message * msg) {
   }
 }
 
+
+
+
 void TransmitStatus(){
   message SbWS0_Status status;
   status.EcuIsPrimary.phys=isPrimary;
   status.SbWS_MachineState.phys=MachineState;
   status.EcuStatusMsgCount.phys=ecuStatusMsgCnt;
-  status.PrimaryBus.phys=primaryBus;
+  status.PrimaryBus.phys=primaryBus;  
   Transmit(status);
   if(!MALFUNCTION_TRANSCEIVER_ERR)
     ecuStatusMsgCnt++;
@@ -481,17 +498,16 @@ void TransmitSteerCommand0(){
   cmd.SteerAngle.phys = _100xSteerAngle;
   cmd.SteerWheelTorque.phys=SteerWheelTorque;
   cmd.SteerConnectionState.phys = SteerConnectionState;
-  write("ECU : %d,Current Speed : %d, Steer Angle : %d, Driver Angle : %d \n" ,0, carspeed,_100xSteerAngle,SteerDriverAngle);
+  write("ECU : %d, Primary :%d , Current Speed : %d, Steer Angle : %d, Driver Angle : %d \n" ,0,pSen, carspeed,_100xSteerAngle,SteerDriverAngle);
   Transmit(cmd);
   
 }
 
 
+
+
 on key 'l' {
-  if(isPrimary){
  isHandleOn = !isHandleOn;
-    write("isHandle: %d",isHandleOn);
-  }
 }
 on key 'w'{
   carspeed+=10;
@@ -504,6 +520,7 @@ on key 's'{
 
 on key 'c'{
     isPrimary = !isPrimary;
-    ecuisPrimary = !isPrimary;
+  
+    pSen = isPrimary ? 0 : 1; 
   
 }

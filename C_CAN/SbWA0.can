@@ -130,14 +130,14 @@ on message CommandResetSteer{
 }
 
 on message SteerCommand0{
-  if(pSen)
+  if(pSen == 1)
     return;
   ActuateSteer(this.SteerAngle);
   CommandLost =0;
 }
 
 on message SteerCommand1{
-  if(!pSen)
+  if(pSen == 0)
     return;
   ActuateSteer(this.SteerAngle);
   CommandLost =0;   
