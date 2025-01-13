@@ -110,7 +110,7 @@ on message SetSteer{
 on message PowertrainStatus{
    if(MachineState ==MALFUNCTION_TRANSCEIVER_ERR)
      return;
- carspeed=this.VehicleSpeed; 
+ carspeed=this.VehicleSpeed/100; 
 }
 
 on message SbWA0_Status{
