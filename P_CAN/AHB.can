@@ -1,4 +1,4 @@
-﻿/*@!Encoding:65001*/
+/*@!Encoding:65001*/
 includes
 {
   
@@ -8,6 +8,9 @@ variables
 {
   msTimer counter_10ms;
   int cnt;
+  
+  int emergency_cnt = 0;          // 긴급모드 유지 시간 확인용 카운터
+  char visit_emergency = 0;       // 긴급모드 visit flag
   
   int brake_status = 0;
   int regen_brake_force = 0;
@@ -30,16 +33,14 @@ variables
 
 void BrakeResp_func(void)
 {
-  if(mode_status != 2) // 긴급모드가 아니라면
-  {
-    message BrakeResp msg;
-    msg.Brake_Status = brake_status;
-    
-    msg.Mech_Brake_Force = (motor_rpm > 0) * mech_brake_force; // 0 ~ 8000
-    msg.Regen_Brake_Force = (motor_rpm > 0) * regen_brake_force; // 0 ~ 2000
-    
+  message BrakeResp msg;
+  msg.Brake_Status = brake_status;
+  
+  msg.Mech_Brake_Force = (motor_rpm > 0) * mech_brake_force; // 0 ~ 8000
+  msg.Regen_Brake_Force = (motor_rpm > 0) * regen_brake_force; // 0 ~ 2000
+  
+  if(emergency_cnt < 1000)
     output(msg);
-  }
 }
 
 on start
@@ -52,81 +53,79 @@ on timer counter_10ms // VCU에 RPM 보내기, 긴급모드에도 보내기
 { 
   ++cnt;
   if(cnt % 2 == 0) BrakeResp_func(); // 50ms 주기
+  
+  emergency_cnt = (mode_status == 2) ? emergency_cnt + 1 : 0;
+  if(emergency_cnt >= 1000)
+    cancelTimer(counter_10ms);
 }
 
 on message PCAN::RegenBrakeReq // 엑셀 밟다 땐 경우(주기 메세지)
 {
-  if(mode_status != 2) // 긴급모드가 아니라면
-  {
-    motor_rpm = this.Motor_RPM.phys;
-    accel_pedal_input_flag = this.Accel_Pedal_Position_Flag.phys;
-    regen_brake_level = this.Regen_Brake_Level.phys;
-    
-    if(accel_pedal_input_flag == 1) // 엑셀을 계속 밟음 => 브레이크 제동력 0으로 만들기(cont'd)
-    {
-      brake_status = 0;
-      regen_brake_force = 0;
-      mech_brake_force = 0;
-    }
-    else // 엑셀 안 밟음 => 회생제동 시작
-    {
-      if(motor_rpm > 8000) regen_brake_force = 2000; // 최대 회생제동력, 모터rpm 기준 조절할 상수 값 넣기
-      else regen_brake_force = motor_rpm / 4;
+  motor_rpm = this.Motor_RPM.phys;
+  accel_pedal_input_flag = this.Accel_Pedal_Position_Flag.phys;
+  regen_brake_level = this.Regen_Brake_Level.phys;
   
-      regen_brake_force = (int)(regen_brake_force * regen_brake_level_arr[regen_brake_level]);
-      brake_status = 0; // 회생만
-      mech_brake_force = 0; // 기계식 0
-    }
+  if(accel_pedal_input_flag == 1) // 엑셀을 계속 밟음 => 브레이크 제동력 0으로 만들기(cont'd)
+  {
+    brake_status = 0;
+    regen_brake_force = 0;
+    mech_brake_force = 0;
+  }
+  else // 엑셀 안 밟음 => 회생제동 시작
+  {
+    if(motor_rpm > 8000) regen_brake_force = 2000; // 최대 회생제동력, 모터rpm 기준 조절할 상수 값 넣기
+    else regen_brake_force = motor_rpm / 4;
+
+    regen_brake_force = (int)(regen_brake_force * regen_brake_level_arr[regen_brake_level]);
+    brake_status = 0; // 회생만
+    mech_brake_force = 0; // 기계식 0
   }
 }
 
 on message PCAN::BasicBrakeReq // 주행 중 브레이크 밟음(주기 메세지)
 {
-  if(mode_status != 2) // 긴급모드가 아니라면
+  long tot_force = 0;
+  brake_pedal_active = this.Brake_Pedal_Active.phys;
+  brake_pedal_position = this.Brake_Pedal_Position.phys;
+  motor_rpm = this.Motor_RPM.phys;
+  regen_brake_level = this.Regen_Brake_Level.phys;
+  
+  if(brake_pedal_active == 1) // 브레이크 밟음
   {
-    long tot_force = 0;
-    brake_pedal_active = this.Brake_Pedal_Active.phys;
-    brake_pedal_position = this.Brake_Pedal_Position.phys;
-    motor_rpm = this.Motor_RPM.phys;
-    regen_brake_level = this.Regen_Brake_Level.phys;
-    
-    if(brake_pedal_active == 1) // 브레이크 밟음
+    tot_force = (long)brake_pedal_position * 11000;
+    if(brake_pedal_position >= 75 || regen_brake_level == 0) // 75 크거나 회생레벨 0일 때
     {
-      tot_force = (long)brake_pedal_position * 11000;
-      if(brake_pedal_position >= 75 || regen_brake_level == 0) // 75 크거나 회생레벨 0일 때
-      {
-        mech_brake_force = tot_force / 140; // 7857
-        brake_status = 2; // 기계만
-        regen_brake_force = 0; // 회생제동력 0
-      }
-      else if(tot_force <= 200000)
-      {
-        regen_brake_force = (int)(tot_force / 100 * regen_brake_level_arr[regen_brake_level]);
-        brake_status = 0; // 회생만
-      }
-      else
-      {
-        regen_brake_force = (int)(tot_force / 140 * regen_brake_level_arr[regen_brake_level]);
-        mech_brake_force = (int)(tot_force / 140 - regen_brake_force);
-        brake_status = 1; // 회생 + 기계
-      }
+      mech_brake_force = tot_force / 140; // 7857
+      brake_status = 2; // 기계만
+      regen_brake_force = 0; // 회생제동력 0
+    }
+    else if(tot_force <= 200000)
+    {
+      regen_brake_force = (int)(tot_force / 100 * regen_brake_level_arr[regen_brake_level]);
+      brake_status = 0; // 회생만
+    }
+    else
+    {
+      regen_brake_force = (int)(tot_force / 140 * regen_brake_level_arr[regen_brake_level]);
+      mech_brake_force = (int)(tot_force / 140 - regen_brake_force);
+      brake_status = 1; // 회생 + 기계
     }
   }
 }
 
 on message PCAN::PcanModeStatus
 {
-  mode_status = this.Mode_Status;
-  
-  if(mode_status == 2)
-    cancelTimer(counter_10ms);
+  mode_status = (visit_emergency == 1 && this.Mode_Status == 0) ? 1 : this.Mode_Status;
+  visit_emergency |= (mode_status == 2);
 }
 
 on message PCAN::PcanHealthyCheck // ECU 체크
 {
   message AHBAlive msg;
   msg.AHB_Alive_Flag = alive_flag;
-  output(msg);
+  
+  if(emergency_cnt < 1000)
+    output(msg);
 }
 
 /* Test */
