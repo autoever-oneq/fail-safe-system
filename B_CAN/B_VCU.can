@@ -1,4 +1,4 @@
-﻿/*@!Encoding:65001*/
+/*@!Encoding:65001*/
 includes
 {
 }
@@ -17,14 +17,16 @@ variables
   }DRIVE_MODE;
   
   /*---------BCAN---------*/ 
-  int CurVelocity = 0;
   //int Motor_RPM = 0;
   int StartUpFlag = 0;
+  int Last_Brake_Pedal_Active = 0;
   char regen_brake_level = 0;
+  int Gear_Status = 0;
   /*---------BCAN---------*/  
   /*--------PCAN---------*/
   int alive_cnt = 0; 
-  char alive_flag; 
+  char alive_flag;
+  char visit_emergency;       // 긴급모드 visit flag
   /* BMU */
   int battery_volt;
   int battery_soh;  
@@ -39,8 +41,8 @@ variables
   /* MCU */
   int motor_rpm;              // 모터 RPM (0 ~ 11000)
   int rpm_increase;
-  int cur_motor_speed;        // 현재 속도
-  int next_motor_speed;       // 다음 속도
+  long cur_car_speed;        // 현재 속도
+  long next_car_speed;       // 다음 속도
   int regen_motor_rpm;
   /* AHB */
   int brake_status;           // 회생제동 only / 회생제동+brake / brake only
@@ -65,22 +67,27 @@ on start
 
 on timer loop
 {
-  /*
+  char next_pcan_mode_status;
+
+  // PCAN ECU Failure situation
   alive_cnt++;
-   if(alive_cnt >= 3 && mode_status != EMERGENCY_MODE) // cont'd
+  
+  next_pcan_mode_status = (alive_cnt >= 6) ? 2 : (visit_emergency == 1) ? 1 : mode_status;
+  if(mode_status != next_pcan_mode_status)
   {
     // 0x201
-    mode_status = EMERGENCY_MODE;
-    sendMsg_PcanModeStatus_func(mode_status);
-    sendMsg_DriveMode(mode_status);
+    sendMsg_BROADCASTModeStatus(next_pcan_mode_status);
+    visit_emergency |= (next_pcan_mode_status == 2);
   }
-  */
-  Timer_10ms ++;
+  mode_status = next_pcan_mode_status;
+  // PCAN ECU Failure situation end
+  
+  Timer_10ms++;
   TimeScheduling10ms(); 
   if (Timer_10ms % 2 == 0){
     TimeScheduling20ms();
   }
-    if(Timer_10ms % 5 == 0){
+  if(Timer_10ms % 5 == 0){
       TimeScheduling50ms();
       if (Timer_10ms % 10 == 0){
         Timer_100ms++;
@@ -93,12 +100,14 @@ on timer loop
           if (Timer_100ms % 10 == 0){
             Timer_1000ms++;
             TimeScheduling1sec();
+            /*
             if (Timer_1000ms % 5 == 0){
               TimeScheduling5sec();
               if (Timer_1000ms % 10 == 0) {
                 TimeScheduling10sec();
               } 
             }
+            */
           }
         }
       }
@@ -130,10 +139,15 @@ void TimeScheduling20ms(){
   sendMsg_MCURpmLimit_func(); // MCU
   
   sendMsg_BatterySocUpdate_func();
-  /*-----PCAN--------*/
-  //TransmitCarSpeed();
-  
+  /*------BCAN------*/
+  //CheckBrakeChange();
+  /*------PCAN------*/
+  TransmitCarSpeed();
+
+  /*------CCAN------*/
 }
+
+
 void TimeScheduling50ms(){
   
 }
@@ -166,11 +180,19 @@ void TimeScheduling10sec(){
 
 
 /*----------------------------BCAN Events----------------------------*/
+
+/*
 on sysvar_update BODY::BRAKEINPUT
 {
   sendMsg_BrakeInputFlag(@sysvar::BODY::BRAKEINPUT);  
 }
+*/
 
+on message BrakePedalState0{
+  sendMsg_BrakeInputFlag(this.BrakePedalActive); 
+  brake_pedal_position = this.BrakePedalPosition;
+  brake_pedal_active = this.BrakePedalActive;
+}
 
 on message Bcan::CautionTurnInput
 {
@@ -195,20 +217,23 @@ on message Bcan::IgnitionOn
 
 on message Bcan::RegBrake_level{
   regen_brake_level = this.RegBrake_Level;
+  @sysvar::BODY::CLUREGLEVEL = regen_brake_level;
 }
 
 on message Bcan::TirePressureAlert{
   if (this.TireAlertFlag == 1){
-    sendMsg_DriveMode(EMERGENCY_MODE);
-    sendMsg_PcanModeStatus_func(EMERGENCY_MODE);
+    sendMsg_BROADCASTModeStatus(EMERGENCY_MODE);
   }
 }
 
 on message Bcan::TireCautionAlert{
   if (this.TireCautionAlertFlag == 1){
-    sendMsg_DriveMode(CAUTION_MODE);
-    sendMsg_PcanModeStatus_func(CAUTION_MODE);
+    sendMsg_BROADCASTModeStatus(CAUTION_MODE);
   }
+}
+
+on message GearInput{
+  Gear_Status = this.GearInput;
 }
 /*----------------------------BCAN Events----------------------------*/
 /*----------------------------PCAN Events----------------------------*/
@@ -220,42 +245,37 @@ on message Pcan::BMUAlive
 
 on message Pcan::BatteryMonitoring0
 {
+  int next_pcan_mode_status;
+  
   battery_volt = this.Battery_Volt.phys;
   battery_soh = this.Battery_SOH.phys;
   output_limit = this.Output_Limit.phys;
   battery_temp = this.Battery_Temp.phys;
   
-  if(mode_status != EMERGENCY_MODE)
+  if(mode_status != 2)
   {
     if(battery_soc <= 100)
     {
-      mode_status = EMERGENCY_MODE;
-      //@sysvar::DRIVEMODE = EMERGENCY_MODE;
-      //긴급 모드 전송
-      sendMsg_PcanModeStatus_func(EMERGENCY_MODE);
-      sendMsg_DriveMode(EMERGENCY_MODE);
+      mode_status = 2;
+      sendMsg_BROADCASTModeStatus(2);
     }
     else if(battery_temp <= 15 || battery_temp >= 45 || battery_soc <= 1000)
     {
-      if(mode_status == GENERAL_MODE) {
-        //주의 모드 전송
-        sendMsg_PcanModeStatus_func(CAUTION_MODE);
-        sendMsg_DriveMode(CAUTION_MODE);
-      }
-      
+      next_pcan_mode_status = 1;
+      if(mode_status != next_pcan_mode_status)
+        sendMsg_BROADCASTModeStatus(next_pcan_mode_status);
       output_limit = 1;
-      mode_status = CAUTION_MODE;
+      mode_status = next_pcan_mode_status;
     }
     else
     {
-      if(mode_status == CAUTION_MODE){
-        //일반 모드 전송
-        sendMsg_PcanModeStatus_func(GENERAL_MODE);
-        sendMsg_DriveMode(GENERAL_MODE);
-      }
+      next_pcan_mode_status = (visit_emergency == 1) ? 1 : 0;
+      if(mode_status != next_pcan_mode_status)
+        sendMsg_BROADCASTModeStatus(next_pcan_mode_status);
       output_limit = 0;
-      mode_status = GENERAL_MODE;
+      mode_status = next_pcan_mode_status;
     }
+    battery_hvac = battery_temp < 20 ? 2 : battery_temp > 40 ? 1 : 0;
   }
 }
 
@@ -299,8 +319,7 @@ on message PCAN::MotorRpmMonitoring // MCU
 {
   motor_rpm = this.Motor_RPM;
 }
-
-
+/*
 on message PCAN_TEMP
 {
   accel_pedal_position = this.Accel_Pedal_Position.phys;
@@ -309,8 +328,16 @@ on message PCAN_TEMP
   brake_pedal_active = this.Brake_Pedal_Active.phys;
   regen_brake_level = this.Regen_Brake_Level.phys;
 }
+*/
 
-/*----------------------------PCAN Events----------------------------*/
+/*----------------------------PCAN Events-------------------------------*/
+/*----------------------------Common Events-------------------------------*/
+void sendMsg_BROADCASTModeStatus(int MODESTATUS) {
+    sendMsg_DriveMode(MODESTATUS);
+    sendMsg_PcanModeStatus_func(MODESTATUS);
+}
+/*----------------------------Common Events-------------------------------*/
+/*----------------------------PCAN Events-------------------------------*/
 /*----------------------------BCAN Functions----------------------------*/
 void sendMsg_BrakeInputFlag(int ButtonState){
   message BrakeInputFlag msg;
@@ -344,19 +371,15 @@ void sendMsg_RightTurnSignalControl(int ButtonState)
 void sendMsg_FrmVCU_CLU_100ms()
 {
   message FrmVCU_CLU_100ms msg;
-  msg.CurVelocity.phys = CurVelocity;
+  msg.CurVelocity.phys = cur_car_speed / 100;
   if(StartUpFlag == 1) output(msg); 
 }
 
 void sendMsg_FrmPCAN_CLU_500ms()
 {
   message FrmPCAN_CLU_500ms msg;
-  if ((brake_status == 2) || (brake_pedal_active == 0)){
-    msg.Regen_Brake_Status.phys = 0;
-  }
-  else {
-    msg.Regen_Brake_Status.phys = 0;
-  }
+  
+  msg.Regen_Brake_Status.phys = (brake_status < 2) && (regen_brake_force > 0) && (regen_brake_level > 0);
   msg.Battery_Output_Limit.phys = output_limit;
   msg.BatterySOC.phys = battery_soc / 100;
   msg.BatteryTemp.phys = battery_temp;
@@ -374,6 +397,14 @@ void sendMsg_DriveMode(int STATUS){
   message DriveMode msg;
   msg.DriveMode.phys = STATUS;
   output(msg); 
+}
+
+
+void CheckBrakeChange(){
+  if (brake_pedal_active != Last_Brake_Pedal_Active){
+    sendMsg_BrakeInputFlag(brake_pedal_active);
+  }
+  Last_Brake_Pedal_Active = brake_pedal_active;
 }
 
 /*-----------------------------------BCAN Functions-----------------------------------*/
@@ -414,9 +445,9 @@ void sendMsg_BatterySocUpdate_func() // BMU
   message BatterySocUpdate msg;
   
   if(accel_pedal_position_flag == 1 && brake_pedal_active == 0)
-    msg.Battery_Soc_Change = -motor_rpm / 1500;
+    msg.Battery_Soc_Change = -(motor_rpm / 1500);
   else
-    msg.Battery_Soc_Change = regen_brake_force / 150;
+    msg.Battery_Soc_Change = (mode_status != 2) * (regen_brake_force / 150);
   
   output(msg);
 }
@@ -427,6 +458,7 @@ void sendMsg_RegenBrakeReq_func(void) // AHB
   msg.Motor_RPM = motor_rpm;
   msg.Accel_Pedal_Position_Flag = accel_pedal_position_flag;
   msg.Regen_Brake_Level = regen_brake_level;
+  //write("regen_brake_level : %d", regen_brake_level);
   output(msg);
 }
 
@@ -500,12 +532,12 @@ void sendMsg_RegenToMcu_func(void) // 기계식 제동력도 주기
   }
   
   /*
-  // 잉여값 처리
   if((brake_pedal_active == 1 || accel_pedal_position_flag == 0) && motor_rpm < 1000)
   {
     regen_motor_rpm = motor_rpm > 10 ? motor_rpm / 10 : motor_rpm;
   }
   */
+  // 잉여값 처리
   if(brake_pedal_active == 1 && regen_motor_rpm == 0 )
   {
     regen_motor_rpm = 2; 
@@ -524,12 +556,13 @@ void sendMsg_MCURpmLimit_func(void)
 } // PCAN DB 확인
 
 void TransmitCarSpeed(void){ // 20ms rpm -> 속도 변환
- cur_motor_speed = convertRPMtoSpeed(motor_rpm); // 현재 속도
-  write("%d",cur_motor_speed);
- next_motor_speed = convertRPMtoSpeed(motor_rpm - regen_motor_rpm + rpm_increase) ; // 다음 속도
+ cur_car_speed = convertRPMtoSpeed(motor_rpm); // 현재 속도
+  //write("%d",cur_motor_speed);
+ next_car_speed = convertRPMtoSpeed(motor_rpm - regen_motor_rpm + rpm_increase) ; // 다음 속도
   // write("%d %d %d -%d +%d", cur_motor_speed, next_motor_speed , motor_rpm, regen_motor_rpm ,rpm_increase);
 }
-int convertRPMtoSpeed(int rpm){ // int64 같은 자료형 사용?
+long convertRPMtoSpeed(int rpm){ // int64 같은 자료형 사용?
+  /*
   int v;
   float f_rpm; 
   f_rpm = (float)(rpm);
@@ -542,5 +575,12 @@ int convertRPMtoSpeed(int rpm){ // int64 같은 자료형 사용?
   
   //write("cal2 :%f %d %d",f_rpm, v, v * 5);
   v *=5;
+  write("%d", v);
+  */
+  long v;
+  int max_speed_kmh = 250;
+  v = rpm;
+  
+  v = (v * max_speed_kmh * 100) / 11000;
   return v;
 }
