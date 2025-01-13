@@ -1,4 +1,4 @@
-﻿/*@!Encoding:65001*/
+/*@!Encoding:65001*/
 
 includes
 {
@@ -9,6 +9,11 @@ variables
 {
   msTimer message_timer_10ms; // 주기 메시지를 위한 타이머
   int timer_cnt;              // 타이머 카운터
+  
+  int emergency_cnt;          // 긴급모드 유지 시간 확인용 카운터
+  char visit_emergency;       // 긴급모드 visit flag
+  
+  char image_direction;       // 애니메이션 내 이미지 프레임 변화 방향 (-1, 0, 1)
   
   const int battery_capacity = 100; // 배터리 최대 용량
   const int energy_efficiency = 5;  // 전비
@@ -40,6 +45,9 @@ on preStart
 {
   timer_cnt = 0;
   
+  emergency_cnt = 0;
+  visit_emergency = 0;
+  
   battery_volt = 700;
   battery_soh = 100;
   battery_soc = 10000; // / 100(%)
@@ -49,6 +57,8 @@ on preStart
   battery_hvac = NONE;
   mode_status = NORMAL;
   output_limit = NORMAL_BAT;
+  
+  image_direction = 0;
 }
 
 on start
@@ -64,7 +74,8 @@ void BatteryMonitoring1_func()
   
   msg.Battery_SOC = battery_soc / 100;
   
-  output(msg);
+  if(emergency_cnt < 1000)
+    output(msg);
 }
 
 // 0x236
@@ -77,7 +88,8 @@ void BatteryMonitoring0_func()
   msg.Battery_Temp.phys = battery_temp;
   msg.Output_Limit.phys = output_limit;
   
-  output(msg);
+  if(emergency_cnt < 1000)
+    output(msg);
 }
 
 // 0x272
@@ -89,7 +101,8 @@ void RemainingRangeCal_func()
   remain_range = battery_capacity * battery_soc * 5 / 10000;
   msg.Remain_Range.phys = remain_range;
   
-  output(msg);
+  if(emergency_cnt < 1000)
+    output(msg);
 }
 
 // 20ms func
@@ -98,6 +111,12 @@ void output_20ms()
   BatteryMonitoring0_func();  // 0x211
   BatteryMonitoring1_func();  // 0x236
   RemainingRangeCal_func();   // 0x272
+}
+
+// 60ms func
+void output_60ms()
+{
+  @sysvar::Powertrain::ImageCnt = (@sysvar::Powertrain::ImageCnt + image_direction) & 15;
 }
 
 // 200ms func
@@ -118,8 +137,14 @@ void output_200ms()
 on timer message_timer_10ms
 {
   ++timer_cnt;
+  
   if(timer_cnt % 2 == 0) {output_20ms();}
+  if(timer_cnt % 6 == 0) {output_60ms();}
   if(timer_cnt % 20 == 0) {output_200ms();}
+  
+  emergency_cnt = (mode_status == EMERGENCY) ? emergency_cnt + 1 : 0;
+  if(emergency_cnt >= 1000)
+    cancelTimer(message_timer_10ms);
 }
 
 /* VCU(Tx) -> BMU(Rx) */
@@ -129,26 +154,29 @@ on message PcanModeStatus
   switch($PcanModeStatus::Mode_Status)
   {
     case 0:
-      mode_status = NORMAL;
+      mode_status = (visit_emergency == 0) ? NORMAL : WARNING;
       break;
     case 1:
       mode_status = WARNING;
       break;
     case 2:
       mode_status = EMERGENCY;
+      visit_emergency = 1;
       break;
     default:
       mode_status = EMERGENCY;
+      visit_emergency = 1;
   }
-  
-  if(mode_status == EMERGENCY)
-    cancelTimer(message_timer_10ms);
 }
 
 // 0x271
 on message BatterySocUpdate
 {
-  battery_soc += $BatterySocUpdate::Battery_Soc_Change;
+  int change;
+  
+  change = this.Battery_Soc_Change;
+  battery_soc += change;
+  image_direction = change > 0 ? -1 : change < 0 ? 1 : 0;
   
   // Outlier cut-off
   if(battery_soc < 0)
@@ -186,7 +214,9 @@ on message PcanHealthyCheck
 {
   message BMUAlive alive;
   alive.BMU_Alive_Flag = alive_flag;
-  output(alive);
+  
+  if(emergency_cnt < 1000)
+    output(alive);
 }
 
 /* End */
