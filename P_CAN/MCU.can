@@ -66,6 +66,8 @@ on timer counter_10ms // VCU에 RPM 보내기, 긴급모드에도 보내기
     RPMtoVCU(); 
   }
   
+  if(emergency_cnt >= 1000)
+    cancelTimer(counter_10ms);
 }
 
 /*
